@@ -1,4 +1,4 @@
-//===--- Linkage.h - Linkage enumeration and utilities ----------*- C++ -*-===//
+//===- Linkage.h - Linkage enumeration and utilities ------------*- C++ -*-===//
 //
 //                     The LLVM Compiler Infrastructure
 //
@@ -6,16 +6,15 @@
 // License. See LICENSE.TXT for details.
 //
 //===----------------------------------------------------------------------===//
-///
+//
 /// \file
 /// \brief Defines the Linkage enumeration and various utility functions.
-///
+//
 //===----------------------------------------------------------------------===//
+
 #ifndef LLVM_CLANG_BASIC_LINKAGE_H
 #define LLVM_CLANG_BASIC_LINKAGE_H
 
-#include <assert.h>
-#include <stdint.h>
 #include <utility>
 
 namespace clang {
@@ -44,6 +43,17 @@ enum Linkage : unsigned char {
   /// \brief No linkage according to the standard, but is visible from other
   /// translation units because of types defined in a inline function.
   VisibleNoLinkage,
+
+  /// \brief Internal linkage according to the Modules TS, but can be referred
+  /// to from other translation units indirectly through inline functions and
+  /// templates in the module interface.
+  ModuleInternalLinkage,
+
+  /// \brief Module linkage, which indicates that the entity can be referred
+  /// to from other translation units within the same module, and indirectly
+  /// from arbitrary other translation units through inline functions and
+  /// templates in the module interface.
+  ModuleLinkage,
 
   /// \brief External linkage, which indicates that the entity can
   /// be referred to from other translation units.
@@ -74,15 +84,20 @@ inline bool isDiscardableGVALinkage(GVALinkage L) {
 }
 
 inline bool isExternallyVisible(Linkage L) {
-  return L == ExternalLinkage || L == VisibleNoLinkage;
+  return L >= VisibleNoLinkage;
 }
 
 inline Linkage getFormalLinkage(Linkage L) {
-  if (L == UniqueExternalLinkage)
+  switch (L) {
+  case UniqueExternalLinkage:
     return ExternalLinkage;
-  if (L == VisibleNoLinkage)
+  case VisibleNoLinkage:
     return NoLinkage;
-  return L;
+  case ModuleInternalLinkage:
+    return InternalLinkage;
+  default:
+    return L;
+  }
 }
 
 inline bool isExternalFormalLinkage(Linkage L) {
@@ -109,6 +124,6 @@ inline Linkage minLinkage(Linkage L1, Linkage L2) {
   return L1 < L2 ? L1 : L2;
 }
 
-} // end namespace clang
+} // namespace clang
 
 #endif // LLVM_CLANG_BASIC_LINKAGE_H

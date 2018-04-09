@@ -29,6 +29,7 @@ add_clang_library(clangStaticAnalyzerCheckers
   CXXSelfAssignmentChecker.cpp
   DeadStoresChecker.cpp
   DebugCheckers.cpp
+  DeleteWithNonVirtualDtorChecker.cpp
   DereferenceChecker.cpp
   DirectIvarAssignment.cpp
   DivZeroChecker.cpp
@@ -36,8 +37,11 @@ add_clang_library(clangStaticAnalyzerCheckers
   DynamicTypeChecker.cpp
   ExprInspectionChecker.cpp
   FixedAddressChecker.cpp
+  GCDAntipatternChecker.cpp
   GenericTaintChecker.cpp
+  GTestChecker.cpp
   IdenticalExprChecker.cpp
+  IteratorChecker.cpp
   IvarInvalidationChecker.cpp
   LLVMConventionsChecker.cpp
   LocalizationChecker.cpp
@@ -46,6 +50,8 @@ add_clang_library(clangStaticAnalyzerCheckers
   MallocChecker.cpp
   MallocOverflowSecurityChecker.cpp
   MallocSizeofChecker.cpp
+  MmapWriteExecChecker.cpp
+  MisusedMovedObjectChecker.cpp
   MPI-Checker/MPIBugReporter.cpp
   MPI-Checker/MPIChecker.cpp
   MPI-Checker/MPIFunctionClassifier.cpp
@@ -53,12 +59,15 @@ add_clang_library(clangStaticAnalyzerCheckers
   NSErrorChecker.cpp
   NoReturnFunctionChecker.cpp
   NonNullParamChecker.cpp
+  NonnullGlobalConstantsChecker.cpp
   NullabilityChecker.cpp
   NumberObjectConversionChecker.cpp
   ObjCAtSyncChecker.cpp
+  ObjCAutoreleaseWriteChecker.cpp
   ObjCContainersASTChecker.cpp
   ObjCContainersChecker.cpp
   ObjCMissingSuperCallChecker.cpp
+  ObjCPropertyChecker.cpp
   ObjCSelfInitChecker.cpp
   ObjCSuperDeallocChecker.cpp
   ObjCUnusedIVarsChecker.cpp
@@ -71,10 +80,12 @@ add_clang_library(clangStaticAnalyzerCheckers
   ReturnUndefChecker.cpp
   SimpleStreamChecker.cpp
   StackAddrEscapeChecker.cpp
+  StdLibraryFunctionsChecker.cpp
   StreamChecker.cpp
   TaintTesterChecker.cpp
   TestAfterDivZeroChecker.cpp
   TraversalChecker.cpp
+  TrustNonnullChecker.cpp
   UndefBranchChecker.cpp
   UndefCapturedBlockVarChecker.cpp
   UndefResultChecker.cpp

@@ -62,11 +62,10 @@ void ModelInjector::onBodySynthesis(const NamedDecl *D) {
     return;
   }
 
-  IntrusiveRefCntPtr<CompilerInvocation> Invocation(
-      new CompilerInvocation(CI.getInvocation()));
+  auto Invocation = std::make_shared<CompilerInvocation>(CI.getInvocation());
 
   FrontendOptions &FrontendOpts = Invocation->getFrontendOpts();
-  InputKind IK = IK_CXX; // FIXME
+  InputKind IK = InputKind::CXX; // FIXME
   FrontendOpts.Inputs.clear();
   FrontendOpts.Inputs.emplace_back(fileName, IK);
   FrontendOpts.DisableFree = true;
@@ -76,7 +75,7 @@ void ModelInjector::onBodySynthesis(const NamedDecl *D) {
   // Modules are parsed by a separate CompilerInstance, so this code mimics that
   // behavior for models
   CompilerInstance Instance(CI.getPCHContainerOperations());
-  Instance.setInvocation(&*Invocation);
+  Instance.setInvocation(std::move(Invocation));
   Instance.createDiagnostics(
       new ForwardingDiagnosticConsumer(CI.getDiagnosticClient()),
       /*ShouldOwnClient=*/true);
@@ -89,7 +88,7 @@ void ModelInjector::onBodySynthesis(const NamedDecl *D) {
   // is set to true to avoid double free issues
   Instance.setFileManager(&CI.getFileManager());
   Instance.setSourceManager(&SM);
-  Instance.setPreprocessor(&CI.getPreprocessor());
+  Instance.setPreprocessor(CI.getPreprocessorPtr());
   Instance.setASTContext(&CI.getASTContext());
 
   Instance.getPreprocessor().InitializeForModelFile();
@@ -110,7 +109,7 @@ void ModelInjector::onBodySynthesis(const NamedDecl *D) {
 
   // The preprocessor enters to the main file id when parsing is started, so
   // the main file id is changed to the model file during parsing and it needs
-  // to be reseted to the former main file id after parsing of the model file
+  // to be reset to the former main file id after parsing of the model file
   // is done.
   SM.setMainFileID(mainFileID);
 }

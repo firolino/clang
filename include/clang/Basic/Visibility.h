@@ -16,6 +16,7 @@
 #define LLVM_CLANG_BASIC_VISIBILITY_H
 
 #include "clang/Basic/Linkage.h"
+#include <cassert>
 
 namespace clang {
 
@@ -74,6 +75,9 @@ public:
   }
   static LinkageInfo none() {
     return LinkageInfo(NoLinkage, DefaultVisibility, false);
+  }
+  static LinkageInfo visible_none() {
+    return LinkageInfo(VisibleNoLinkage, DefaultVisibility, false);
   }
 
   Linkage getLinkage() const { return (Linkage)linkage_; }

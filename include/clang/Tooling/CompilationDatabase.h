@@ -1,4 +1,4 @@
-//===--- CompilationDatabase.h - --------------------------------*- C++ -*-===//
+//===- CompilationDatabase.h ------------------------------------*- C++ -*-===//
 //
 //                     The LLVM Compiler Infrastructure
 //
@@ -34,6 +34,7 @@
 #include "llvm/ADT/Twine.h"
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace clang {
@@ -41,12 +42,11 @@ namespace tooling {
 
 /// \brief Specifies the working directory and command of a compilation.
 struct CompileCommand {
-  CompileCommand() {}
+  CompileCommand() = default;
   CompileCommand(Twine Directory, Twine Filename,
-                 std::vector<std::string> CommandLine)
-      : Directory(Directory.str()),
-        Filename(Filename.str()),
-        CommandLine(std::move(CommandLine)) {}
+                 std::vector<std::string> CommandLine, Twine Output)
+      : Directory(Directory.str()), Filename(Filename.str()),
+        CommandLine(std::move(CommandLine)), Output(Output.str()){}
 
   /// \brief The working directory the command was executed from.
   std::string Directory;
@@ -57,23 +57,18 @@ struct CompileCommand {
   /// \brief The command line that was executed.
   std::vector<std::string> CommandLine;
 
-  /// \brief An optional mapping from each file's path to its content for all
-  /// files needed for the compilation that are not available via the file
-  /// system.
-  ///
-  /// Note that a tool implementation is required to fall back to the file
-  /// system if a source file is not provided in the mapped sources, as
-  /// compilation databases will usually not provide all files in mapped sources
-  /// for performance reasons.
-  std::vector<std::pair<std::string, std::string> > MappedSources;
+  /// The output file associated with the command.
+  std::string Output;
 };
 
 /// \brief Interface for compilation databases.
 ///
-/// A compilation database allows the user to retrieve all compile command lines
-/// that a specified file is compiled with in a project.
-/// The retrieved compile command lines can be used to run clang tools over
-/// a subset of the files in a project.
+/// A compilation database allows the user to retrieve compile command lines
+/// for the files in a project.
+///
+/// Many implementations are enumerable, allowing all command lines to be
+/// retrieved. These can be used to run clang tools over a subset of the files
+/// in a project.
 class CompilationDatabase {
 public:
   virtual ~CompilationDatabase();
@@ -110,17 +105,20 @@ public:
   /// \brief Returns all compile commands in which the specified file was
   /// compiled.
   ///
-  /// This includes compile comamnds that span multiple source files.
+  /// This includes compile commands that span multiple source files.
   /// For example, consider a project with the following compilations:
   /// $ clang++ -o test a.cc b.cc t.cc
   /// $ clang++ -o production a.cc b.cc -DPRODUCTION
   /// A compilation database representing the project would return both command
   /// lines for a.cc and b.cc and only the first command line for t.cc.
   virtual std::vector<CompileCommand> getCompileCommands(
-    StringRef FilePath) const = 0;
+      StringRef FilePath) const = 0;
 
   /// \brief Returns the list of all files available in the compilation database.
-  virtual std::vector<std::string> getAllFiles() const = 0;
+  ///
+  /// By default, returns nothing. Implementations should override this if they
+  /// can enumerate their source files.
+  virtual std::vector<std::string> getAllFiles() const { return {}; }
 
   /// \brief Returns all compile commands for all the files in the compilation
   /// database.
@@ -128,7 +126,10 @@ public:
   /// FIXME: Add a layer in Tooling that provides an interface to run a tool
   /// over all files in a compilation database. Not all build systems have the
   /// ability to provide a feasible implementation for \c getAllCompileCommands.
-  virtual std::vector<CompileCommand> getAllCompileCommands() const = 0;
+  ///
+  /// By default, this is implemented in terms of getAllFiles() and
+  /// getCompileCommands(). Subclasses may override this for efficiency.
+  virtual std::vector<CompileCommand> getAllCompileCommands() const;
 };
 
 /// \brief Interface for compilation database plugins.
@@ -155,6 +156,7 @@ public:
 /// \brief A compilation database that returns a single compile command line.
 ///
 /// Useful when we want a tool to behave more like a compiler invocation.
+/// This compilation database is not enumerable: getAllFiles() returns {}.
 class FixedCompilationDatabase : public CompilationDatabase {
 public:
   /// \brief Creates a FixedCompilationDatabase from the arguments after "--".
@@ -182,10 +184,16 @@ public:
   /// the number of arguments before "--", if "--" was found in the argument
   /// list.
   /// \param Argv Points to the command line arguments.
+  /// \param ErrorMsg Contains error text if the function returns null pointer.
   /// \param Directory The base directory used in the FixedCompilationDatabase.
-  static FixedCompilationDatabase *loadFromCommandLine(int &Argc,
-                                                       const char *const *Argv,
-                                                       Twine Directory = ".");
+  static std::unique_ptr<FixedCompilationDatabase> loadFromCommandLine(
+      int &Argc, const char *const *Argv, std::string &ErrorMsg,
+      Twine Directory = ".");
+
+  /// Reads flags from the given file, one-per line.
+  /// Returns nullptr and sets ErrorMessage if we can't read the file.
+  static std::unique_ptr<FixedCompilationDatabase>
+  loadFromFile(StringRef Path, std::string &ErrorMsg);
 
   /// \brief Constructs a compilation data base from a specified directory
   /// and command line.
@@ -199,24 +207,13 @@ public:
   std::vector<CompileCommand>
   getCompileCommands(StringRef FilePath) const override;
 
-  /// \brief Returns the list of all files available in the compilation database.
-  ///
-  /// Note: This is always an empty list for the fixed compilation database.
-  std::vector<std::string> getAllFiles() const override;
-
-  /// \brief Returns all compile commands for all the files in the compilation
-  /// database.
-  ///
-  /// Note: This is always an empty list for the fixed compilation database.
-  std::vector<CompileCommand> getAllCompileCommands() const override;
-
 private:
   /// This is built up to contain a single entry vector to be returned from
   /// getCompileCommands after adding the positional argument.
   std::vector<CompileCommand> CompileCommands;
 };
 
-} // end namespace tooling
-} // end namespace clang
+} // namespace tooling
+} // namespace clang
 
-#endif
+#endif // LLVM_CLANG_TOOLING_COMPILATIONDATABASE_H

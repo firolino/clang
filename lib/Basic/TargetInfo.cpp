@@ -18,10 +18,11 @@
 #include "llvm/ADT/APFloat.h"
 #include "llvm/ADT/STLExtras.h"
 #include "llvm/Support/ErrorHandling.h"
+#include "llvm/Support/TargetParser.h"
 #include <cstdlib>
 using namespace clang;
 
-static const LangAS::Map DefaultAddrSpaceMap = { 0 };
+static const LangASMap DefaultAddrSpaceMap = {0};
 
 // TargetInfo Constructor.
 TargetInfo::TargetInfo(const llvm::Triple &T) : TargetOpts(), Triple(T) {
@@ -29,7 +30,9 @@ TargetInfo::TargetInfo(const llvm::Triple &T) : TargetOpts(), Triple(T) {
   // SPARC.  These should be overridden by concrete targets as needed.
   BigEndian = !T.isLittleEndian();
   TLSSupported = true;
+  VLASupported = true;
   NoAsmVariants = false;
+  HasLegalHalfType = false;
   HasFloat128 = false;
   PointerWidth = PointerAlign = 32;
   BoolWidth = BoolAlign = 8;
@@ -42,7 +45,7 @@ TargetInfo::TargetInfo(const llvm::Triple &T) : TargetOpts(), Triple(T) {
   // From the glibc documentation, on GNU systems, malloc guarantees 16-byte
   // alignment on 64-bit systems and 8-byte alignment on 32-bit systems. See
   // https://www.gnu.org/software/libc/manual/html_node/Malloc-Examples.html
-  if (T.isGNUEnvironment())
+  if (T.isGNUEnvironment() || T.isWindowsMSVCEnvironment())
     NewAlign = Triple.isArch64Bit() ? 128 : Triple.isArch32Bit() ? 64 : 0;
   else
     NewAlign = 0; // Infer from basic type alignment.
@@ -77,11 +80,11 @@ TargetInfo::TargetInfo(const llvm::Triple &T) : TargetOpts(), Triple(T) {
   UseZeroLengthBitfieldAlignment = false;
   UseExplicitBitFieldAlignment = true;
   ZeroLengthBitfieldBoundary = 0;
-  HalfFormat = &llvm::APFloat::IEEEhalf;
-  FloatFormat = &llvm::APFloat::IEEEsingle;
-  DoubleFormat = &llvm::APFloat::IEEEdouble;
-  LongDoubleFormat = &llvm::APFloat::IEEEdouble;
-  Float128Format = &llvm::APFloat::IEEEquad;
+  HalfFormat = &llvm::APFloat::IEEEhalf();
+  FloatFormat = &llvm::APFloat::IEEEsingle();
+  DoubleFormat = &llvm::APFloat::IEEEdouble();
+  LongDoubleFormat = &llvm::APFloat::IEEEdouble();
+  Float128Format = &llvm::APFloat::IEEEquad();
   MCountName = "mcount";
   RegParmMax = 0;
   SSERegParmMax = 0;
@@ -143,9 +146,11 @@ const char *TargetInfo::getTypeConstantSuffix(IntType T) const {
   case UnsignedChar:
     if (getCharWidth() < getIntWidth())
       return "";
+    LLVM_FALLTHROUGH;
   case UnsignedShort:
     if (getShortWidth() < getIntWidth())
       return "";
+    LLVM_FALLTHROUGH;
   case UnsignedInt:      return "U";
   case UnsignedLong:     return "UL";
   case UnsignedLongLong: return "ULL";
@@ -227,12 +232,12 @@ TargetInfo::RealType TargetInfo::getRealTypeByWidth(unsigned BitWidth) const {
 
   switch (BitWidth) {
   case 96:
-    if (&getLongDoubleFormat() == &llvm::APFloat::x87DoubleExtended)
+    if (&getLongDoubleFormat() == &llvm::APFloat::x87DoubleExtended())
       return LongDouble;
     break;
   case 128:
-    if (&getLongDoubleFormat() == &llvm::APFloat::PPCDoubleDouble ||
-        &getLongDoubleFormat() == &llvm::APFloat::IEEEquad)
+    if (&getLongDoubleFormat() == &llvm::APFloat::PPCDoubleDouble() ||
+        &getLongDoubleFormat() == &llvm::APFloat::IEEEquad())
       return LongDouble;
     if (hasFloat128Type())
       return Float128;
@@ -282,12 +287,20 @@ bool TargetInfo::isTypeSigned(IntType T) {
 
 /// adjust - Set forced language options.
 /// Apply changes to the target information with respect to certain
-/// language options which change the target configuration.
-void TargetInfo::adjust(const LangOptions &Opts) {
+/// language options which change the target configuration and adjust
+/// the language based on the target options where applicable.
+void TargetInfo::adjust(LangOptions &Opts) {
   if (Opts.NoBitFieldTypeAlign)
     UseBitFieldTypeAlignment = false;
-  if (Opts.ShortWChar)
-    WCharType = UnsignedShort;
+
+  switch (Opts.WCharSize) {
+  default: llvm_unreachable("invalid wchar_t width");
+  case 0: break;
+  case 1: WCharType = Opts.WCharIsSigned ? SignedChar : UnsignedChar; break;
+  case 2: WCharType = Opts.WCharIsSigned ? SignedShort : UnsignedShort; break;
+  case 4: WCharType = Opts.WCharIsSigned ? SignedInt : UnsignedInt; break;
+  }
+
   if (Opts.AlignDouble) {
     DoubleAlign = LongLongAlign = 64;
     LongDoubleAlign = 64;
@@ -309,7 +322,7 @@ void TargetInfo::adjust(const LangOptions &Opts) {
     // to generating illegal code that uses 64bit doubles.
     if (DoubleWidth != FloatWidth) {
       DoubleWidth = DoubleAlign = 64;
-      DoubleFormat = &llvm::APFloat::IEEEdouble;
+      DoubleFormat = &llvm::APFloat::IEEEdouble();
     }
     LongDoubleWidth = LongDoubleAlign = 128;
 
@@ -323,9 +336,9 @@ void TargetInfo::adjust(const LangOptions &Opts) {
     IntMaxType = SignedLongLong;
     Int64Type = SignedLong;
 
-    HalfFormat = &llvm::APFloat::IEEEhalf;
-    FloatFormat = &llvm::APFloat::IEEEsingle;
-    LongDoubleFormat = &llvm::APFloat::IEEEquad;
+    HalfFormat = &llvm::APFloat::IEEEhalf();
+    FloatFormat = &llvm::APFloat::IEEEsingle();
+    LongDoubleFormat = &llvm::APFloat::IEEEquad();
   }
 
   if (Opts.NewAlignOverride)
@@ -342,6 +355,28 @@ bool TargetInfo::initFeatureMap(
     setFeatureEnabled(Features, Name.substr(1), Enabled);
   }
   return true;
+}
+
+TargetInfo::CallingConvKind
+TargetInfo::getCallingConvKind(bool ClangABICompat4) const {
+  if (getCXXABI() != TargetCXXABI::Microsoft &&
+      (ClangABICompat4 || getTriple().getOS() == llvm::Triple::PS4))
+    return CCK_ClangABI4OrPS4;
+  return CCK_Default;
+}
+
+LangAS TargetInfo::getOpenCLTypeAddrSpace(OpenCLTypeKind TK) const {
+  switch (TK) {
+  case OCLTK_Image:
+  case OCLTK_Pipe:
+    return LangAS::opencl_global;
+
+  case OCLTK_Sampler:
+    return LangAS::opencl_constant;
+
+  default:
+    return LangAS::Default;
+  }
 }
 
 //===----------------------------------------------------------------------===//
@@ -410,8 +445,8 @@ bool TargetInfo::isValidGCCRegisterName(StringRef Name) const {
   return false;
 }
 
-StringRef
-TargetInfo::getNormalizedGCCRegisterName(StringRef Name) const {
+StringRef TargetInfo::getNormalizedGCCRegisterName(StringRef Name,
+                                                   bool ReturnCanonical) const {
   assert(isValidGCCRegisterName(Name) && "Invalid register passed in");
 
   // Get rid of any register prefix.
@@ -436,7 +471,7 @@ TargetInfo::getNormalizedGCCRegisterName(StringRef Name) const {
       // Make sure the register that the additional name is for is within
       // the bounds of the register names from above.
       if (AN == Name && ARN.RegNum < Names.size())
-        return Name;
+        return ReturnCanonical ? Names[ARN.RegNum] : Name;
     }
 
   // Now check aliases.
@@ -504,6 +539,11 @@ bool TargetInfo::validateOutputConstraint(ConstraintInfo &Info) const {
     case '?': // Disparage slightly code.
     case '!': // Disparage severely.
     case '*': // Ignore for choosing register preferences.
+    case 'i': // Ignore i,n,E,F as output constraints (match from the other
+              // chars)
+    case 'n':
+    case 'E':
+    case 'F':
       break;  // Pass them.
     }
 

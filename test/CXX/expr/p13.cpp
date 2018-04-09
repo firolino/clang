@@ -1,4 +1,4 @@
-// RUN: %clang_cc1 -std=c++1z -verify %s -fexceptions -fcxx-exceptions
+// RUN: %clang_cc1 -std=c++1z -verify %s -fexceptions -fcxx-exceptions -Wno-dynamic-exception-spec
 
 struct X {};
 struct Y : X {};
@@ -40,12 +40,12 @@ namespace dynamic_exception_spec {
   using Y = void (*)() throw(float);
   using Z = void (*)() throw(int, float);
   void g(X x, Y y, Z z, bool k) {
-    x = k ? X() : Y(); // expected-error {{not superset}}
-    y = k ? X() : Y(); // expected-error {{not superset}}
+    x = k ? X() : Y(); // expected-warning {{not superset}}
+    y = k ? X() : Y(); // expected-warning {{not superset}}
     z = k ? X() : Y();
 
-    x = k ? x : y; // expected-error {{not superset}}
-    y = k ? x : y; // expected-error {{not superset}}
+    x = k ? x : y; // expected-warning {{not superset}}
+    y = k ? x : y; // expected-warning {{not superset}}
     z = k ? x : y;
   }
 }

@@ -44,6 +44,7 @@ TEST(JSONCompilationDatabase, ErrsOnInvalidFormat) {
   expectFailure("[{\"directory\":\"\",\"command\":[],\"file\":\"\"}]", "Command not string");
   expectFailure("[{\"directory\":\"\",\"arguments\":[[]],\"file\":\"\"}]",
                 "Arguments contain non-string");
+  expectFailure("[{\"output\":[]}]", "Expected strings as value.");
 }
 
 static std::vector<std::string> getAllFiles(StringRef JSONDatabase,
@@ -105,16 +106,19 @@ TEST(JSONCompilationDatabase, GetAllCompileCommands) {
   StringRef Directory1("//net/dir1");
   StringRef FileName1("file1");
   StringRef Command1("command1");
+  StringRef Output1("file1.o");
   StringRef Directory2("//net/dir2");
   StringRef FileName2("file2");
   StringRef Command2("command2");
+  StringRef Output2("");
 
   std::vector<CompileCommand> Commands = getAllCompileCommands(
       JSONCommandLineSyntax::Gnu,
       ("[{\"directory\":\"" + Directory1 + "\"," + "\"command\":\"" + Command1 +
        "\","
        "\"file\":\"" +
-       FileName1 + "\"},"
+       FileName1 + "\", \"output\":\"" +
+       Output1 + "\"},"
                    " {\"directory\":\"" +
        Directory2 + "\"," + "\"command\":\"" + Command2 + "\","
                                                           "\"file\":\"" +
@@ -124,10 +128,12 @@ TEST(JSONCompilationDatabase, GetAllCompileCommands) {
   EXPECT_EQ(2U, Commands.size()) << ErrorMessage;
   EXPECT_EQ(Directory1, Commands[0].Directory) << ErrorMessage;
   EXPECT_EQ(FileName1, Commands[0].Filename) << ErrorMessage;
+  EXPECT_EQ(Output1, Commands[0].Output) << ErrorMessage;
   ASSERT_EQ(1u, Commands[0].CommandLine.size());
   EXPECT_EQ(Command1, Commands[0].CommandLine[0]) << ErrorMessage;
   EXPECT_EQ(Directory2, Commands[1].Directory) << ErrorMessage;
   EXPECT_EQ(FileName2, Commands[1].Filename) << ErrorMessage;
+  EXPECT_EQ(Output2, Commands[1].Output) << ErrorMessage;
   ASSERT_EQ(1u, Commands[1].CommandLine.size());
   EXPECT_EQ(Command2, Commands[1].CommandLine[0]) << ErrorMessage;
 
@@ -498,18 +504,22 @@ TEST(FixedCompilationDatabase, GetAllCompileCommands) {
 
 TEST(ParseFixedCompilationDatabase, ReturnsNullOnEmptyArgumentList) {
   int Argc = 0;
-  std::unique_ptr<FixedCompilationDatabase> Database(
-      FixedCompilationDatabase::loadFromCommandLine(Argc, nullptr));
+  std::string ErrorMsg;
+  std::unique_ptr<FixedCompilationDatabase> Database =
+      FixedCompilationDatabase::loadFromCommandLine(Argc, nullptr, ErrorMsg);
   EXPECT_FALSE(Database);
+  EXPECT_TRUE(ErrorMsg.empty());
   EXPECT_EQ(0, Argc);
 }
 
 TEST(ParseFixedCompilationDatabase, ReturnsNullWithoutDoubleDash) {
   int Argc = 2;
   const char *Argv[] = { "1", "2" };
+  std::string ErrorMsg;
   std::unique_ptr<FixedCompilationDatabase> Database(
-      FixedCompilationDatabase::loadFromCommandLine(Argc, Argv));
+      FixedCompilationDatabase::loadFromCommandLine(Argc, Argv, ErrorMsg));
   EXPECT_FALSE(Database);
+  EXPECT_TRUE(ErrorMsg.empty());
   EXPECT_EQ(2, Argc);
 }
 
@@ -518,9 +528,11 @@ TEST(ParseFixedCompilationDatabase, ReturnsArgumentsAfterDoubleDash) {
   const char *Argv[] = {
     "1", "2", "--\0no-constant-folding", "-DDEF3", "-DDEF4"
   };
+  std::string ErrorMsg;
   std::unique_ptr<FixedCompilationDatabase> Database(
-      FixedCompilationDatabase::loadFromCommandLine(Argc, Argv));
+      FixedCompilationDatabase::loadFromCommandLine(Argc, Argv, ErrorMsg));
   ASSERT_TRUE((bool)Database);
+  ASSERT_TRUE(ErrorMsg.empty());
   std::vector<CompileCommand> Result =
     Database->getCompileCommands("source");
   ASSERT_EQ(1ul, Result.size());
@@ -537,9 +549,11 @@ TEST(ParseFixedCompilationDatabase, ReturnsArgumentsAfterDoubleDash) {
 TEST(ParseFixedCompilationDatabase, ReturnsEmptyCommandLine) {
   int Argc = 3;
   const char *Argv[] = { "1", "2", "--\0no-constant-folding" };
-  std::unique_ptr<FixedCompilationDatabase> Database(
-      FixedCompilationDatabase::loadFromCommandLine(Argc, Argv));
+  std::string ErrorMsg;
+  std::unique_ptr<FixedCompilationDatabase> Database =
+      FixedCompilationDatabase::loadFromCommandLine(Argc, Argv, ErrorMsg);
   ASSERT_TRUE((bool)Database);
+  ASSERT_TRUE(ErrorMsg.empty());
   std::vector<CompileCommand> Result =
     Database->getCompileCommands("source");
   ASSERT_EQ(1ul, Result.size());
@@ -554,9 +568,11 @@ TEST(ParseFixedCompilationDatabase, ReturnsEmptyCommandLine) {
 TEST(ParseFixedCompilationDatabase, HandlesPositionalArgs) {
   const char *Argv[] = {"1", "2", "--", "-c", "somefile.cpp", "-DDEF3"};
   int Argc = sizeof(Argv) / sizeof(char*);
-  std::unique_ptr<FixedCompilationDatabase> Database(
-      FixedCompilationDatabase::loadFromCommandLine(Argc, Argv));
+  std::string ErrorMsg;
+  std::unique_ptr<FixedCompilationDatabase> Database =
+      FixedCompilationDatabase::loadFromCommandLine(Argc, Argv, ErrorMsg);
   ASSERT_TRUE((bool)Database);
+  ASSERT_TRUE(ErrorMsg.empty());
   std::vector<CompileCommand> Result =
     Database->getCompileCommands("source");
   ASSERT_EQ(1ul, Result.size());
@@ -570,12 +586,35 @@ TEST(ParseFixedCompilationDatabase, HandlesPositionalArgs) {
   EXPECT_EQ(2, Argc);
 }
 
+TEST(ParseFixedCompilationDatabase, HandlesPositionalArgsSyntaxOnly) {
+  // Adjust the given command line arguments to ensure that any positional
+  // arguments in them are stripped.
+  const char *Argv[] = {"--", "somefile.cpp", "-fsyntax-only", "-DDEF3"};
+  int Argc = llvm::array_lengthof(Argv);
+  std::string ErrorMessage;
+  std::unique_ptr<CompilationDatabase> Database =
+      FixedCompilationDatabase::loadFromCommandLine(Argc, Argv, ErrorMessage);
+  ASSERT_TRUE((bool)Database);
+  ASSERT_TRUE(ErrorMessage.empty());
+  std::vector<CompileCommand> Result = Database->getCompileCommands("source");
+  ASSERT_EQ(1ul, Result.size());
+  ASSERT_EQ(".", Result[0].Directory);
+  std::vector<std::string> Expected;
+  Expected.push_back("clang-tool");
+  Expected.push_back("-fsyntax-only");
+  Expected.push_back("-DDEF3");
+  Expected.push_back("source");
+  ASSERT_EQ(Expected, Result[0].CommandLine);
+}
+
 TEST(ParseFixedCompilationDatabase, HandlesArgv0) {
   const char *Argv[] = {"1", "2", "--", "mytool", "somefile.cpp"};
   int Argc = sizeof(Argv) / sizeof(char*);
-  std::unique_ptr<FixedCompilationDatabase> Database(
-      FixedCompilationDatabase::loadFromCommandLine(Argc, Argv));
+  std::string ErrorMsg;
+  std::unique_ptr<FixedCompilationDatabase> Database =
+      FixedCompilationDatabase::loadFromCommandLine(Argc, Argv, ErrorMsg);
   ASSERT_TRUE((bool)Database);
+  ASSERT_TRUE(ErrorMsg.empty());
   std::vector<CompileCommand> Result =
     Database->getCompileCommands("source");
   ASSERT_EQ(1ul, Result.size());

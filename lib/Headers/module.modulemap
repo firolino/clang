@@ -38,6 +38,7 @@ module _Builtin_intrinsics [system] [extern_c] {
     explicit module neon {
       requires neon
       header "arm_neon.h"
+      header "arm_fp16.h"
       export *
     }
   }
@@ -61,6 +62,7 @@ module _Builtin_intrinsics [system] [extern_c] {
     textual header "xopintrin.h"
     textual header "fma4intrin.h"
     textual header "mwaitxintrin.h"
+    textual header "clzerointrin.h"
 
     explicit module mm_malloc {
       requires !freestanding

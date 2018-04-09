@@ -76,3 +76,37 @@ int pr28314(void) {
   a += __builtin_object_size(p3->b, 0);
   return a;
 }
+
+int pr31843() {
+  int n = 0;
+
+  struct { int f; } a;
+  int b;
+  n += __builtin_object_size(({&(b ? &a : &a)->f; pr31843;}), 0); // expected-warning{{expression result unused}}
+
+  struct statfs { char f_mntonname[1024];};
+  struct statfs *outStatFSBuf;
+  n += __builtin_object_size(outStatFSBuf->f_mntonname ? "" : "", 1); // expected-warning{{address of array}}
+  n += __builtin_object_size(outStatFSBuf->f_mntonname ?: "", 1);
+
+  return n;
+}
+
+typedef struct {
+  char string[512];
+} NestedArrayStruct;
+
+typedef struct {
+  int x;
+  NestedArrayStruct session[];
+} IncompleteArrayStruct;
+
+void rd36094951_IAS_builtin_object_size_assertion(IncompleteArrayStruct *p) {
+#define rd36094951_CHECK(mode)                                                 \
+  __builtin___strlcpy_chk(p->session[0].string, "ab", 2,                       \
+                          __builtin_object_size(p->session[0].string, mode))
+  rd36094951_CHECK(0);
+  rd36094951_CHECK(1);
+  rd36094951_CHECK(2);
+  rd36094951_CHECK(3);
+}

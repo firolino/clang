@@ -1,4 +1,4 @@
-//===--- Replacement.h - Framework for clang refactoring tools --*- C++ -*-===//
+//===- Replacement.h - Framework for clang refactoring tools ----*- C++ -*-===//
 //
 //                     The LLVM Compiler Infrastructure
 //
@@ -21,23 +21,30 @@
 
 #include "clang/Basic/LangOptions.h"
 #include "clang/Basic/SourceLocation.h"
+#include "llvm/ADT/Optional.h"
 #include "llvm/ADT/StringRef.h"
+#include "llvm/Support/Compiler.h"
 #include "llvm/Support/Error.h"
+#include "llvm/Support/raw_ostream.h"
 #include <map>
 #include <set>
 #include <string>
+#include <system_error>
+#include <utility>
 #include <vector>
 
 namespace clang {
 
+class FileManager;
 class Rewriter;
+class SourceManager;
 
 namespace tooling {
 
 /// \brief A source range independent of the \c SourceManager.
 class Range {
 public:
-  Range() : Offset(0), Length(0) {}
+  Range() = default;
   Range(unsigned Offset, unsigned Length) : Offset(Offset), Length(Length) {}
 
   /// \brief Accessors.
@@ -66,8 +73,8 @@ public:
   /// @}
 
 private:
-  unsigned Offset;
-  unsigned Length;
+  unsigned Offset = 0;
+  unsigned Length = 0;
 };
 
 /// \brief A text replacement.
@@ -136,6 +143,61 @@ private:
   std::string ReplacementText;
 };
 
+enum class replacement_error {
+  fail_to_apply = 0,
+  wrong_file_path,
+  overlap_conflict,
+  insert_conflict,
+};
+
+/// \brief Carries extra error information in replacement-related llvm::Error,
+/// e.g. fail applying replacements and replacements conflict.
+class ReplacementError : public llvm::ErrorInfo<ReplacementError> {
+public:
+  ReplacementError(replacement_error Err) : Err(Err) {}
+
+  /// \brief Constructs an error related to an existing replacement.
+  ReplacementError(replacement_error Err, Replacement Existing)
+      : Err(Err), ExistingReplacement(std::move(Existing)) {}
+
+  /// \brief Constructs an error related to a new replacement and an existing
+  /// replacement in a set of replacements.
+  ReplacementError(replacement_error Err, Replacement New, Replacement Existing)
+      : Err(Err), NewReplacement(std::move(New)),
+        ExistingReplacement(std::move(Existing)) {}
+
+  std::string message() const override;
+
+  void log(raw_ostream &OS) const override { OS << message(); }
+
+  replacement_error get() const { return Err; }
+
+  static char ID;
+
+  const llvm::Optional<Replacement> &getNewReplacement() const {
+    return NewReplacement;
+  }
+
+  const llvm::Optional<Replacement> &getExistingReplacement() const {
+    return ExistingReplacement;
+  }
+
+private:
+  // Users are not expected to use error_code.
+  std::error_code convertToErrorCode() const override {
+    return llvm::inconvertibleErrorCode();
+  }
+
+  replacement_error Err;
+
+  // A new replacement, which is to expected be added into a set of
+  // replacements, that is causing problem.
+  llvm::Optional<Replacement> NewReplacement;
+
+  // An existing replacement in a replacements set that is causing problem.
+  llvm::Optional<Replacement> ExistingReplacement;
+};
+
 /// \brief Less-than operator between two Replacements.
 bool operator<(const Replacement &LHS, const Replacement &RHS);
 
@@ -146,12 +208,12 @@ bool operator==(const Replacement &LHS, const Replacement &RHS);
 /// Two replacements are considered conflicts if they overlap or have the same
 /// offset (i.e. order-dependent).
 class Replacements {
- private:
-   typedef std::set<Replacement> ReplacementsImpl;
+private:
+  using ReplacementsImpl = std::set<Replacement>;
 
- public:
-  typedef ReplacementsImpl::const_iterator const_iterator;
-  typedef ReplacementsImpl::const_reverse_iterator const_reverse_iterator;
+public:
+  using const_iterator = ReplacementsImpl::const_iterator;
+  using const_reverse_iterator = ReplacementsImpl::const_reverse_iterator;
 
   Replacements() = default;
 
@@ -163,8 +225,9 @@ class Replacements {
   /// it returns an llvm::Error, i.e. there is a conflict between R and the
   /// existing replacements (i.e. they are order-dependent) or R's file path is
   /// different from the filepath of existing replacements. Callers must
-  /// explicitly check the Error returned. This prevents users from adding
-  /// order-dependent replacements. To control the order in which
+  /// explicitly check the Error returned, and the returned error can be
+  /// converted to a string message with `llvm::toString()`. This prevents users
+  /// from adding order-dependent replacements. To control the order in which
   /// order-dependent replacements are applied, use merge({R}) with R referring
   /// to the changed code after applying all existing replacements.
   /// Two replacements A and B are considered order-independent if applying them
@@ -197,7 +260,7 @@ class Replacements {
 
   /// \brief Merges \p Replaces into the current replacements. \p Replaces
   /// refers to code after applying the current replacements.
-  Replacements merge(const Replacements &Replaces) const;
+  LLVM_NODISCARD Replacements merge(const Replacements &Replaces) const;
 
   // Returns the affected ranges in the changed code.
   std::vector<Range> getAffectedRanges() const;
@@ -224,7 +287,6 @@ class Replacements {
   bool operator==(const Replacements &RHS) const {
     return Replaces == RHS.Replaces;
   }
-
 
 private:
   Replacements(const_iterator Begin, const_iterator End)
@@ -272,11 +334,6 @@ struct TranslationUnitReplacements {
   /// Name of the main source for the translation unit.
   std::string MainSourceFile;
 
-  /// A freeform chunk of text to describe the context of the replacements.
-  /// Will be printed, for example, when detecting conflicts during replacement
-  /// deduplication.
-  std::string Context;
-
   std::vector<Replacement> Replacements;
 };
 
@@ -293,9 +350,10 @@ calculateRangesAfterReplacements(const Replacements &Replaces,
                                  const std::vector<Range> &Ranges);
 
 /// \brief If there are multiple <File, Replacements> pairs with the same file
-/// path after removing dots, we only keep one pair (with path after dots being
-/// removed) and discard the rest.
+/// entry, we only keep one pair and discard the rest.
+/// If a file does not exist, its corresponding replacements will be ignored.
 std::map<std::string, Replacements> groupReplacementsByFile(
+    FileManager &FileMgr,
     const std::map<std::string, Replacements> &FileToReplaces);
 
 template <typename Node>
@@ -307,7 +365,8 @@ Replacement::Replacement(const SourceManager &Sources,
   setFromSourceRange(Sources, Range, ReplacementText, LangOpts);
 }
 
-} // end namespace tooling
-} // end namespace clang
+} // namespace tooling
+
+} // namespace clang
 
 #endif // LLVM_CLANG_TOOLING_CORE_REPLACEMENT_H

@@ -36,6 +36,12 @@
 // RUN:   | FileCheck --check-prefix=CHECK-LIB32PATHS %s
 // CHECK-LIB32PATHS: libraries: ={{.*:?}}/usr/lib32
 //
+// Check that O32 MIPS uses /usr/lib32 on a 64-bit tree.
+//
+// RUN: %clang -target mips-freebsd12 %s \
+// RUN:   --sysroot=%S/Inputs/multiarch_freebsd64_tree -print-search-dirs 2>&1 \
+// RUN:   | FileCheck --check-prefix=CHECK-LIB32PATHS %s
+//
 // Check that the new linker flags are passed to FreeBSD
 // RUN: %clang -no-canonical-prefixes -target x86_64-pc-freebsd8 -m32 %s \
 // RUN:   --sysroot=%S/Inputs/multiarch_freebsd64_tree -### 2>&1 \
@@ -127,7 +133,7 @@
 
 // RUN: %clang -target x86_64-pc-freebsd8 %s -### -flto 2>&1 \
 // RUN:   | FileCheck --check-prefix=CHECK-LTO %s
-// CHECK-LTO: ld{{.*}}" "-plugin{{.*}}LLVMgold.so
+// CHECK-LTO: ld{{.*}}" "-plugin{{.*}}{{[/\\]}}LLVMgold.{{dll|dylib|so}}
 
 // RUN: %clang -target sparc-unknown-freebsd8 %s -### -fpic -no-integrated-as 2>&1 \
 // RUN:   | FileCheck --check-prefix=CHECK-SPARC-PIE %s

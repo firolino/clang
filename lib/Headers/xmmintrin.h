@@ -46,7 +46,7 @@ typedef unsigned int __v4su __attribute__((__vector_size__(16)));
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VADDSS / ADDSS instructions.
+/// This intrinsic corresponds to the <c> VADDSS / ADDSS </c> instructions.
 ///
 /// \param __a
 ///    A 128-bit vector of [4 x float] containing one of the source operands.
@@ -69,7 +69,7 @@ _mm_add_ss(__m128 __a, __m128 __b)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VADDPS / ADDPS instructions.
+/// This intrinsic corresponds to the <c> VADDPS / ADDPS </c> instructions.
 ///
 /// \param __a
 ///    A 128-bit vector of [4 x float] containing one of the source operands.
@@ -88,7 +88,7 @@ _mm_add_ps(__m128 __a, __m128 __b)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VSUBSS / SUBSS instructions.
+/// This intrinsic corresponds to the <c> VSUBSS / SUBSS </c> instructions.
 ///
 /// \param __a
 ///    A 128-bit vector of [4 x float] containing the minuend. The lower 32 bits
@@ -112,7 +112,7 @@ _mm_sub_ss(__m128 __a, __m128 __b)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VSUBPS / SUBPS instructions.
+/// This intrinsic corresponds to the <c> VSUBPS / SUBPS </c> instructions.
 ///
 /// \param __a
 ///    A 128-bit vector of [4 x float] containing the minuend.
@@ -131,7 +131,7 @@ _mm_sub_ps(__m128 __a, __m128 __b)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VMULSS / MULSS instructions.
+/// This intrinsic corresponds to the <c> VMULSS / MULSS </c> instructions.
 ///
 /// \param __a
 ///    A 128-bit vector of [4 x float] containing one of the source operands.
@@ -154,7 +154,7 @@ _mm_mul_ss(__m128 __a, __m128 __b)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VMULPS / MULPS instructions.
+/// This intrinsic corresponds to the <c> VMULPS / MULPS </c> instructions.
 ///
 /// \param __a
 ///    A 128-bit vector of [4 x float] containing one of the source operands.
@@ -173,7 +173,7 @@ _mm_mul_ps(__m128 __a, __m128 __b)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VDIVSS / DIVSS instructions.
+/// This intrinsic corresponds to the <c> VDIVSS / DIVSS </c> instructions.
 ///
 /// \param __a
 ///    A 128-bit vector of [4 x float] containing the dividend. The lower 32
@@ -195,7 +195,7 @@ _mm_div_ss(__m128 __a, __m128 __b)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VDIVPS / DIVPS instructions.
+/// This intrinsic corresponds to the <c> VDIVPS / DIVPS </c> instructions.
 ///
 /// \param __a
 ///    A 128-bit vector of [4 x float] containing the dividend.
@@ -214,7 +214,7 @@ _mm_div_ps(__m128 __a, __m128 __b)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VSQRTSS / SQRTSS instructions.
+/// This intrinsic corresponds to the <c> VSQRTSS / SQRTSS </c> instructions.
 ///
 /// \param __a
 ///    A 128-bit vector of [4 x float]. The lower 32 bits of this operand are
@@ -233,7 +233,7 @@ _mm_sqrt_ss(__m128 __a)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VSQRTPS / SQRTPS instructions.
+/// This intrinsic corresponds to the <c> VSQRTPS / SQRTPS </c> instructions.
 ///
 /// \param __a
 ///    A 128-bit vector of [4 x float].
@@ -250,7 +250,7 @@ _mm_sqrt_ps(__m128 __a)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VRCPSS / RCPSS instructions.
+/// This intrinsic corresponds to the <c> VRCPSS / RCPSS </c> instructions.
 ///
 /// \param __a
 ///    A 128-bit vector of [4 x float]. The lower 32 bits of this operand are
@@ -269,7 +269,7 @@ _mm_rcp_ss(__m128 __a)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VRCPPS / RCPPS instructions.
+/// This intrinsic corresponds to the <c> VRCPPS / RCPPS </c> instructions.
 ///
 /// \param __a
 ///    A 128-bit vector of [4 x float].
@@ -286,7 +286,7 @@ _mm_rcp_ps(__m128 __a)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VRSQRTSS / RSQRTSS instructions.
+/// This intrinsic corresponds to the <c> VRSQRTSS / RSQRTSS </c> instructions.
 ///
 /// \param __a
 ///    A 128-bit vector of [4 x float]. The lower 32 bits of this operand are
@@ -306,7 +306,7 @@ _mm_rsqrt_ss(__m128 __a)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VRSQRTPS / RSQRTPS instructions.
+/// This intrinsic corresponds to the <c> VRSQRTPS / RSQRTPS </c> instructions.
 ///
 /// \param __a
 ///    A 128-bit vector of [4 x float].
@@ -324,7 +324,7 @@ _mm_rsqrt_ps(__m128 __a)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VMINSS / MINSS instructions.
+/// This intrinsic corresponds to the <c> VMINSS / MINSS </c> instructions.
 ///
 /// \param __a
 ///    A 128-bit vector of [4 x float] containing one of the operands. The lower
@@ -341,12 +341,12 @@ _mm_min_ss(__m128 __a, __m128 __b)
   return __builtin_ia32_minss((__v4sf)__a, (__v4sf)__b);
 }
 
-/// \brief Compares two 128-bit vectors of [4 x float] and returns the
-///    lesser of each pair of values.
+/// \brief Compares two 128-bit vectors of [4 x float] and returns the lesser
+///    of each pair of values.
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VMINPS / MINPS instructions.
+/// This intrinsic corresponds to the <c> VMINPS / MINPS </c> instructions.
 ///
 /// \param __a
 ///    A 128-bit vector of [4 x float] containing one of the operands.
@@ -361,12 +361,12 @@ _mm_min_ps(__m128 __a, __m128 __b)
 }
 
 /// \brief Compares two 32-bit float values in the low-order bits of both
-///    operands and returns the greater value in the low-order bits of
-///    a vector [4 x float].
+///    operands and returns the greater value in the low-order bits of a 128-bit
+///    vector of [4 x float].
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VMAXSS / MAXSS instructions.
+/// This intrinsic corresponds to the <c> VMAXSS / MAXSS </c> instructions.
 ///
 /// \param __a
 ///    A 128-bit vector of [4 x float] containing one of the operands. The lower
@@ -388,7 +388,7 @@ _mm_max_ss(__m128 __a, __m128 __b)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VMAXPS / MAXPS instructions.
+/// This intrinsic corresponds to the <c> VMAXPS / MAXPS </c> instructions.
 ///
 /// \param __a
 ///    A 128-bit vector of [4 x float] containing one of the operands.
@@ -406,7 +406,7 @@ _mm_max_ps(__m128 __a, __m128 __b)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VANDPS / ANDPS instructions.
+/// This intrinsic corresponds to the <c> VANDPS / ANDPS </c> instructions.
 ///
 /// \param __a
 ///    A 128-bit vector containing one of the source operands.
@@ -426,7 +426,7 @@ _mm_and_ps(__m128 __a, __m128 __b)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VANDNPS / ANDNPS instructions.
+/// This intrinsic corresponds to the <c> VANDNPS / ANDNPS </c> instructions.
 ///
 /// \param __a
 ///    A 128-bit vector of [4 x float] containing the first source operand. The
@@ -446,7 +446,7 @@ _mm_andnot_ps(__m128 __a, __m128 __b)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VORPS / ORPS instructions.
+/// This intrinsic corresponds to the <c> VORPS / ORPS </c> instructions.
 ///
 /// \param __a
 ///    A 128-bit vector of [4 x float] containing one of the source operands.
@@ -465,7 +465,7 @@ _mm_or_ps(__m128 __a, __m128 __b)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VXORPS / XORPS instructions.
+/// This intrinsic corresponds to the <c> VXORPS / XORPS </c> instructions.
 ///
 /// \param __a
 ///    A 128-bit vector of [4 x float] containing one of the source operands.
@@ -485,7 +485,7 @@ _mm_xor_ps(__m128 __a, __m128 __b)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VCMPEQSS / CMPEQSS instructions.
+/// This intrinsic corresponds to the <c> VCMPEQSS / CMPEQSS </c> instructions.
 ///
 /// \param __a
 ///    A 128-bit vector of [4 x float] containing one of the operands. The lower
@@ -506,7 +506,7 @@ _mm_cmpeq_ss(__m128 __a, __m128 __b)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VCMPEQPS / CMPEQPS instructions.
+/// This intrinsic corresponds to the <c> VCMPEQPS / CMPEQPS </c> instructions.
 ///
 /// \param __a
 ///    A 128-bit vector of [4 x float].
@@ -526,7 +526,7 @@ _mm_cmpeq_ps(__m128 __a, __m128 __b)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VCMPLTSS / CMPLTSS instructions.
+/// This intrinsic corresponds to the <c> VCMPLTSS / CMPLTSS </c> instructions.
 ///
 /// \param __a
 ///    A 128-bit vector of [4 x float] containing one of the operands. The lower
@@ -548,7 +548,7 @@ _mm_cmplt_ss(__m128 __a, __m128 __b)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VCMPLTPS / CMPLTPS instructions.
+/// This intrinsic corresponds to the <c> VCMPLTPS / CMPLTPS </c> instructions.
 ///
 /// \param __a
 ///    A 128-bit vector of [4 x float].
@@ -569,7 +569,7 @@ _mm_cmplt_ps(__m128 __a, __m128 __b)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VCMPLESS / CMPLESS instructions.
+/// This intrinsic corresponds to the <c> VCMPLESS / CMPLESS </c> instructions.
 ///
 /// \param __a
 ///    A 128-bit vector of [4 x float] containing one of the operands. The lower
@@ -591,7 +591,7 @@ _mm_cmple_ss(__m128 __a, __m128 __b)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VCMPLEPS / CMPLEPS instructions.
+/// This intrinsic corresponds to the <c> VCMPLEPS / CMPLEPS </c> instructions.
 ///
 /// \param __a
 ///    A 128-bit vector of [4 x float].
@@ -611,7 +611,7 @@ _mm_cmple_ps(__m128 __a, __m128 __b)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VCMPLTSS / CMPLTSS instructions.
+/// This intrinsic corresponds to the <c> VCMPLTSS / CMPLTSS </c> instructions.
 ///
 /// \param __a
 ///    A 128-bit vector of [4 x float] containing one of the operands. The lower
@@ -635,7 +635,7 @@ _mm_cmpgt_ss(__m128 __a, __m128 __b)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VCMPLTPS / CMPLTPS instructions.
+/// This intrinsic corresponds to the <c> VCMPLTPS / CMPLTPS </c> instructions.
 ///
 /// \param __a
 ///    A 128-bit vector of [4 x float].
@@ -656,7 +656,7 @@ _mm_cmpgt_ps(__m128 __a, __m128 __b)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VCMPLESS / CMPLESS instructions.
+/// This intrinsic corresponds to the <c> VCMPLESS / CMPLESS </c> instructions.
 ///
 /// \param __a
 ///    A 128-bit vector of [4 x float] containing one of the operands. The lower
@@ -680,7 +680,7 @@ _mm_cmpge_ss(__m128 __a, __m128 __b)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VCMPLEPS / CMPLEPS instructions.
+/// This intrinsic corresponds to the <c> VCMPLEPS / CMPLEPS </c> instructions.
 ///
 /// \param __a
 ///    A 128-bit vector of [4 x float].
@@ -699,7 +699,8 @@ _mm_cmpge_ps(__m128 __a, __m128 __b)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VCMPNEQSS / CMPNEQSS instructions.
+/// This intrinsic corresponds to the <c> VCMPNEQSS / CMPNEQSS </c>
+///   instructions.
 ///
 /// \param __a
 ///    A 128-bit vector of [4 x float] containing one of the operands. The lower
@@ -720,7 +721,8 @@ _mm_cmpneq_ss(__m128 __a, __m128 __b)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VCMPNEQPS / CMPNEQPS instructions.
+/// This intrinsic corresponds to the <c> VCMPNEQPS / CMPNEQPS </c>
+///   instructions.
 ///
 /// \param __a
 ///    A 128-bit vector of [4 x float].
@@ -740,7 +742,8 @@ _mm_cmpneq_ps(__m128 __a, __m128 __b)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VCMPNLTSS / CMPNLTSS instructions.
+/// This intrinsic corresponds to the <c> VCMPNLTSS / CMPNLTSS </c>
+///   instructions.
 ///
 /// \param __a
 ///    A 128-bit vector of [4 x float] containing one of the operands. The lower
@@ -762,7 +765,8 @@ _mm_cmpnlt_ss(__m128 __a, __m128 __b)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VCMPNLTPS / CMPNLTPS instructions.
+/// This intrinsic corresponds to the <c> VCMPNLTPS / CMPNLTPS </c>
+///   instructions.
 ///
 /// \param __a
 ///    A 128-bit vector of [4 x float].
@@ -783,7 +787,8 @@ _mm_cmpnlt_ps(__m128 __a, __m128 __b)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VCMPNLESS / CMPNLESS instructions.
+/// This intrinsic corresponds to the <c> VCMPNLESS / CMPNLESS </c>
+///   instructions.
 ///
 /// \param __a
 ///    A 128-bit vector of [4 x float] containing one of the operands. The lower
@@ -805,7 +810,8 @@ _mm_cmpnle_ss(__m128 __a, __m128 __b)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VCMPNLEPS / CMPNLEPS instructions.
+/// This intrinsic corresponds to the <c> VCMPNLEPS / CMPNLEPS </c>
+///   instructions.
 ///
 /// \param __a
 ///    A 128-bit vector of [4 x float].
@@ -826,7 +832,8 @@ _mm_cmpnle_ps(__m128 __a, __m128 __b)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VCMPNLTSS / CMPNLTSS instructions.
+/// This intrinsic corresponds to the <c> VCMPNLTSS / CMPNLTSS </c>
+///   instructions.
 ///
 /// \param __a
 ///    A 128-bit vector of [4 x float] containing one of the operands. The lower
@@ -850,7 +857,8 @@ _mm_cmpngt_ss(__m128 __a, __m128 __b)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VCMPNLTPS / CMPNLTPS instructions.
+/// This intrinsic corresponds to the <c> VCMPNLTPS / CMPNLTPS </c>
+///   instructions.
 ///
 /// \param __a
 ///    A 128-bit vector of [4 x float].
@@ -871,7 +879,8 @@ _mm_cmpngt_ps(__m128 __a, __m128 __b)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VCMPNLESS / CMPNLESS instructions.
+/// This intrinsic corresponds to the <c> VCMPNLESS / CMPNLESS </c>
+///   instructions.
 ///
 /// \param __a
 ///    A 128-bit vector of [4 x float] containing one of the operands. The lower
@@ -895,7 +904,8 @@ _mm_cmpnge_ss(__m128 __a, __m128 __b)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VCMPNLEPS / CMPNLEPS instructions.
+/// This intrinsic corresponds to the <c> VCMPNLEPS / CMPNLEPS </c>
+///   instructions.
 ///
 /// \param __a
 ///    A 128-bit vector of [4 x float].
@@ -916,7 +926,8 @@ _mm_cmpnge_ps(__m128 __a, __m128 __b)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VCMPORDSS / CMPORDSS instructions.
+/// This intrinsic corresponds to the <c> VCMPORDSS / CMPORDSS </c>
+///   instructions.
 ///
 /// \param __a
 ///    A 128-bit vector of [4 x float] containing one of the operands. The lower
@@ -938,7 +949,8 @@ _mm_cmpord_ss(__m128 __a, __m128 __b)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VCMPORDPS / CMPORDPS instructions.
+/// This intrinsic corresponds to the <c> VCMPORDPS / CMPORDPS </c>
+///   instructions.
 ///
 /// \param __a
 ///    A 128-bit vector of [4 x float].
@@ -959,7 +971,8 @@ _mm_cmpord_ps(__m128 __a, __m128 __b)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VCMPUNORDSS / CMPUNORDSS instructions.
+/// This intrinsic corresponds to the <c> VCMPUNORDSS / CMPUNORDSS </c>
+///   instructions.
 ///
 /// \param __a
 ///    A 128-bit vector of [4 x float] containing one of the operands. The lower
@@ -981,7 +994,8 @@ _mm_cmpunord_ss(__m128 __a, __m128 __b)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VCMPUNORDPS / CMPUNORDPS instructions.
+/// This intrinsic corresponds to the <c> VCMPUNORDPS / CMPUNORDPS </c>
+///   instructions.
 ///
 /// \param __a
 ///    A 128-bit vector of [4 x float].
@@ -997,9 +1011,12 @@ _mm_cmpunord_ps(__m128 __a, __m128 __b)
 /// \brief Compares two 32-bit float values in the low-order bits of both
 ///    operands for equality and returns the result of the comparison.
 ///
+///    If either of the two lower 32-bit values is NaN, 0 is returned.
+///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VCOMISS / COMISS instructions.
+/// This intrinsic corresponds to the <c> VCOMISS / COMISS </c>
+///   instructions.
 ///
 /// \param __a
 ///    A 128-bit vector of [4 x float]. The lower 32 bits of this operand are
@@ -1007,7 +1024,8 @@ _mm_cmpunord_ps(__m128 __a, __m128 __b)
 /// \param __b
 ///    A 128-bit vector of [4 x float]. The lower 32 bits of this operand are
 ///    used in the comparison.
-/// \returns An integer containing the comparison results.
+/// \returns An integer containing the comparison results. If either of the
+///    two lower 32-bit values is NaN, 0 is returned.
 static __inline__ int __DEFAULT_FN_ATTRS
 _mm_comieq_ss(__m128 __a, __m128 __b)
 {
@@ -1018,9 +1036,12 @@ _mm_comieq_ss(__m128 __a, __m128 __b)
 ///    operands to determine if the first operand is less than the second
 ///    operand and returns the result of the comparison.
 ///
+///    If either of the two lower 32-bit values is NaN, 0 is returned.
+///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VCOMISS / COMISS instructions.
+/// This intrinsic corresponds to the <c> VCOMISS / COMISS </c>
+///   instructions.
 ///
 /// \param __a
 ///    A 128-bit vector of [4 x float]. The lower 32 bits of this operand are
@@ -1028,7 +1049,8 @@ _mm_comieq_ss(__m128 __a, __m128 __b)
 /// \param __b
 ///    A 128-bit vector of [4 x float]. The lower 32 bits of this operand are
 ///    used in the comparison.
-/// \returns An integer containing the comparison results.
+/// \returns An integer containing the comparison results. If either of the two
+///     lower 32-bit values is NaN, 0 is returned.
 static __inline__ int __DEFAULT_FN_ATTRS
 _mm_comilt_ss(__m128 __a, __m128 __b)
 {
@@ -1039,9 +1061,11 @@ _mm_comilt_ss(__m128 __a, __m128 __b)
 ///    operands to determine if the first operand is less than or equal to the
 ///    second operand and returns the result of the comparison.
 ///
+///    If either of the two lower 32-bit values is NaN, 0 is returned.
+///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VCOMISS / COMISS instructions.
+/// This intrinsic corresponds to the <c> VCOMISS / COMISS </c> instructions.
 ///
 /// \param __a
 ///    A 128-bit vector of [4 x float]. The lower 32 bits of this operand are
@@ -1049,7 +1073,8 @@ _mm_comilt_ss(__m128 __a, __m128 __b)
 /// \param __b
 ///    A 128-bit vector of [4 x float]. The lower 32 bits of this operand are
 ///    used in the comparison.
-/// \returns An integer containing the comparison results.
+/// \returns An integer containing the comparison results. If either of the two
+///     lower 32-bit values is NaN, 0 is returned.
 static __inline__ int __DEFAULT_FN_ATTRS
 _mm_comile_ss(__m128 __a, __m128 __b)
 {
@@ -1060,9 +1085,11 @@ _mm_comile_ss(__m128 __a, __m128 __b)
 ///    operands to determine if the first operand is greater than the second
 ///    operand and returns the result of the comparison.
 ///
+///    If either of the two lower 32-bit values is NaN, 0 is returned.
+///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VCOMISS / COMISS instructions.
+/// This intrinsic corresponds to the <c> VCOMISS / COMISS </c> instructions.
 ///
 /// \param __a
 ///    A 128-bit vector of [4 x float]. The lower 32 bits of this operand are
@@ -1070,7 +1097,8 @@ _mm_comile_ss(__m128 __a, __m128 __b)
 /// \param __b
 ///    A 128-bit vector of [4 x float]. The lower 32 bits of this operand are
 ///    used in the comparison.
-/// \returns An integer containing the comparison results.
+/// \returns An integer containing the comparison results. If either of the
+///     two lower 32-bit values is NaN, 0 is returned.
 static __inline__ int __DEFAULT_FN_ATTRS
 _mm_comigt_ss(__m128 __a, __m128 __b)
 {
@@ -1081,9 +1109,11 @@ _mm_comigt_ss(__m128 __a, __m128 __b)
 ///    operands to determine if the first operand is greater than or equal to
 ///    the second operand and returns the result of the comparison.
 ///
+///    If either of the two lower 32-bit values is NaN, 0 is returned.
+///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VCOMISS / COMISS instructions.
+/// This intrinsic corresponds to the <c> VCOMISS / COMISS </c> instructions.
 ///
 /// \param __a
 ///    A 128-bit vector of [4 x float]. The lower 32 bits of this operand are
@@ -1091,7 +1121,8 @@ _mm_comigt_ss(__m128 __a, __m128 __b)
 /// \param __b
 ///    A 128-bit vector of [4 x float]. The lower 32 bits of this operand are
 ///    used in the comparison.
-/// \returns An integer containing the comparison results.
+/// \returns An integer containing the comparison results. If either of the two
+///    lower 32-bit values is NaN, 0 is returned.
 static __inline__ int __DEFAULT_FN_ATTRS
 _mm_comige_ss(__m128 __a, __m128 __b)
 {
@@ -1102,9 +1133,11 @@ _mm_comige_ss(__m128 __a, __m128 __b)
 ///    operands to determine if the first operand is not equal to the second
 ///    operand and returns the result of the comparison.
 ///
+///    If either of the two lower 32-bit values is NaN, 1 is returned.
+///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VCOMISS / COMISS instructions.
+/// This intrinsic corresponds to the <c> VCOMISS / COMISS </c> instructions.
 ///
 /// \param __a
 ///    A 128-bit vector of [4 x float]. The lower 32 bits of this operand are
@@ -1112,7 +1145,8 @@ _mm_comige_ss(__m128 __a, __m128 __b)
 /// \param __b
 ///    A 128-bit vector of [4 x float]. The lower 32 bits of this operand are
 ///    used in the comparison.
-/// \returns An integer containing the comparison results.
+/// \returns An integer containing the comparison results. If either of the
+///     two lower 32-bit values is NaN, 1 is returned.
 static __inline__ int __DEFAULT_FN_ATTRS
 _mm_comineq_ss(__m128 __a, __m128 __b)
 {
@@ -1123,9 +1157,11 @@ _mm_comineq_ss(__m128 __a, __m128 __b)
 ///    the low-order bits of both operands to determine equality and returns
 ///    the result of the comparison.
 ///
+///    If either of the two lower 32-bit values is NaN, 0 is returned.
+///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VUCOMISS / UCOMISS instructions.
+/// This intrinsic corresponds to the <c> VUCOMISS / UCOMISS </c> instructions.
 ///
 /// \param __a
 ///    A 128-bit vector of [4 x float]. The lower 32 bits of this operand are
@@ -1133,7 +1169,8 @@ _mm_comineq_ss(__m128 __a, __m128 __b)
 /// \param __b
 ///    A 128-bit vector of [4 x float]. The lower 32 bits of this operand are
 ///    used in the comparison.
-/// \returns An integer containing the comparison results.
+/// \returns An integer containing the comparison results. If either of the two
+///     lower 32-bit values is NaN, 0 is returned.
 static __inline__ int __DEFAULT_FN_ATTRS
 _mm_ucomieq_ss(__m128 __a, __m128 __b)
 {
@@ -1144,9 +1181,11 @@ _mm_ucomieq_ss(__m128 __a, __m128 __b)
 ///    the low-order bits of both operands to determine if the first operand is
 ///    less than the second operand and returns the result of the comparison.
 ///
+///    If either of the two lower 32-bit values is NaN, 0 is returned.
+///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VUCOMISS / UCOMISS instructions.
+/// This intrinsic corresponds to the <c> VUCOMISS / UCOMISS </c> instructions.
 ///
 /// \param __a
 ///    A 128-bit vector of [4 x float]. The lower 32 bits of this operand are
@@ -1154,7 +1193,8 @@ _mm_ucomieq_ss(__m128 __a, __m128 __b)
 /// \param __b
 ///    A 128-bit vector of [4 x float]. The lower 32 bits of this operand are
 ///    used in the comparison.
-/// \returns An integer containing the comparison results.
+/// \returns An integer containing the comparison results. If either of the two
+///    lower 32-bit values is NaN, 0 is returned.
 static __inline__ int __DEFAULT_FN_ATTRS
 _mm_ucomilt_ss(__m128 __a, __m128 __b)
 {
@@ -1162,13 +1202,15 @@ _mm_ucomilt_ss(__m128 __a, __m128 __b)
 }
 
 /// \brief Performs an unordered comparison of two 32-bit float values using
-///    the low-order bits of both operands to determine if the first operand
-///    is less than or equal to the second operand and returns the result of
-///    the comparison.
+///    the low-order bits of both operands to determine if the first operand is
+///    less than or equal to the second operand and returns the result of the
+///    comparison.
+///
+///    If either of the two lower 32-bit values is NaN, 0 is returned.
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VUCOMISS / UCOMISS instructions.
+/// This intrinsic corresponds to the <c> VUCOMISS / UCOMISS </c> instructions.
 ///
 /// \param __a
 ///    A 128-bit vector of [4 x float]. The lower 32 bits of this operand are
@@ -1176,7 +1218,8 @@ _mm_ucomilt_ss(__m128 __a, __m128 __b)
 /// \param __b
 ///    A 128-bit vector of [4 x float]. The lower 32 bits of this operand are
 ///    used in the comparison.
-/// \returns An integer containing the comparison results.
+/// \returns An integer containing the comparison results. If either of the two
+///     lower 32-bit values is NaN, 0 is returned.
 static __inline__ int __DEFAULT_FN_ATTRS
 _mm_ucomile_ss(__m128 __a, __m128 __b)
 {
@@ -1184,13 +1227,15 @@ _mm_ucomile_ss(__m128 __a, __m128 __b)
 }
 
 /// \brief Performs an unordered comparison of two 32-bit float values using
-///    the low-order bits of both operands to determine if the first operand
-///    is greater than the second operand and returns the result of the
+///    the low-order bits of both operands to determine if the first operand is
+///    greater than the second operand and returns the result of the
 ///    comparison.
+///
+///    If either of the two lower 32-bit values is NaN, 0 is returned.
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VUCOMISS / UCOMISS instructions.
+/// This intrinsic corresponds to the <c> VUCOMISS / UCOMISS </c> instructions.
 ///
 /// \param __a
 ///    A 128-bit vector of [4 x float]. The lower 32 bits of this operand are
@@ -1198,7 +1243,8 @@ _mm_ucomile_ss(__m128 __a, __m128 __b)
 /// \param __b
 ///    A 128-bit vector of [4 x float]. The lower 32 bits of this operand are
 ///    used in the comparison.
-/// \returns An integer containing the comparison results.
+/// \returns An integer containing the comparison results. If either of the two
+///     lower 32-bit values is NaN, 0 is returned.
 static __inline__ int __DEFAULT_FN_ATTRS
 _mm_ucomigt_ss(__m128 __a, __m128 __b)
 {
@@ -1210,9 +1256,11 @@ _mm_ucomigt_ss(__m128 __a, __m128 __b)
 ///    greater than or equal to the second operand and returns the result of
 ///    the comparison.
 ///
+///    If either of the two lower 32-bit values is NaN, 0 is returned.
+///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VUCOMISS / UCOMISS instructions.
+/// This intrinsic corresponds to the <c> VUCOMISS / UCOMISS </c> instructions.
 ///
 /// \param __a
 ///    A 128-bit vector of [4 x float]. The lower 32 bits of this operand are
@@ -1220,7 +1268,8 @@ _mm_ucomigt_ss(__m128 __a, __m128 __b)
 /// \param __b
 ///    A 128-bit vector of [4 x float]. The lower 32 bits of this operand are
 ///    used in the comparison.
-/// \returns An integer containing the comparison results.
+/// \returns An integer containing the comparison results. If either of the two
+///     lower 32-bit values is NaN, 0 is returned.
 static __inline__ int __DEFAULT_FN_ATTRS
 _mm_ucomige_ss(__m128 __a, __m128 __b)
 {
@@ -1231,9 +1280,11 @@ _mm_ucomige_ss(__m128 __a, __m128 __b)
 ///    the low-order bits of both operands to determine inequality and returns
 ///    the result of the comparison.
 ///
+///    If either of the two lower 32-bit values is NaN, 1 is returned.
+///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VUCOMISS / UCOMISS instructions.
+/// This intrinsic corresponds to the <c> VUCOMISS / UCOMISS </c> instructions.
 ///
 /// \param __a
 ///    A 128-bit vector of [4 x float]. The lower 32 bits of this operand are
@@ -1241,7 +1292,8 @@ _mm_ucomige_ss(__m128 __a, __m128 __b)
 /// \param __b
 ///    A 128-bit vector of [4 x float]. The lower 32 bits of this operand are
 ///    used in the comparison.
-/// \returns An integer containing the comparison results.
+/// \returns An integer containing the comparison results. If either of the two
+///    lower 32-bit values is NaN, 1 is returned.
 static __inline__ int __DEFAULT_FN_ATTRS
 _mm_ucomineq_ss(__m128 __a, __m128 __b)
 {
@@ -1253,7 +1305,8 @@ _mm_ucomineq_ss(__m128 __a, __m128 __b)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VCVTSS2SI / CVTSS2SI instructions.
+/// This intrinsic corresponds to the <c> VCVTSS2SI / CVTSS2SI </c>
+///   instructions.
 ///
 /// \param __a
 ///    A 128-bit vector of [4 x float]. The lower 32 bits of this operand are
@@ -1270,7 +1323,8 @@ _mm_cvtss_si32(__m128 __a)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VCVTSS2SI / CVTSS2SI instructions.
+/// This intrinsic corresponds to the <c> VCVTSS2SI / CVTSS2SI </c>
+///   instructions.
 ///
 /// \param __a
 ///    A 128-bit vector of [4 x float]. The lower 32 bits of this operand are
@@ -1289,7 +1343,8 @@ _mm_cvt_ss2si(__m128 __a)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VCVTSS2SI / CVTSS2SI instructions.
+/// This intrinsic corresponds to the <c> VCVTSS2SI / CVTSS2SI </c>
+///   instructions.
 ///
 /// \param __a
 ///    A 128-bit vector of [4 x float]. The lower 32 bits of this operand are
@@ -1308,7 +1363,7 @@ _mm_cvtss_si64(__m128 __a)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c CVTPS2PI instruction.
+/// This intrinsic corresponds to the <c> CVTPS2PI </c> instruction.
 ///
 /// \param __a
 ///    A 128-bit vector of [4 x float].
@@ -1324,7 +1379,7 @@ _mm_cvtps_pi32(__m128 __a)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c CVTPS2PI instruction.
+/// This intrinsic corresponds to the <c> CVTPS2PI </c> instruction.
 ///
 /// \param __a
 ///    A 128-bit vector of [4 x float].
@@ -1341,7 +1396,8 @@ _mm_cvt_ps2pi(__m128 __a)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VCVTTSS2SI / CVTTSS2SI instructions.
+/// This intrinsic corresponds to the <c> VCVTTSS2SI / CVTTSS2SI </c>
+///   instructions.
 ///
 /// \param __a
 ///    A 128-bit vector of [4 x float]. The lower 32 bits of this operand are
@@ -1359,7 +1415,8 @@ _mm_cvttss_si32(__m128 __a)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VCVTTSS2SI / CVTTSS2SI instructions.
+/// This intrinsic corresponds to the <c> VCVTTSS2SI / CVTTSS2SI </c>
+///   instructions.
 ///
 /// \param __a
 ///    A 128-bit vector of [4 x float]. The lower 32 bits of this operand are
@@ -1378,7 +1435,8 @@ _mm_cvtt_ss2si(__m128 __a)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VCVTTSS2SI / CVTTSS2SI instructions.
+/// This intrinsic corresponds to the <c> VCVTTSS2SI / CVTTSS2SI </c>
+///   instructions.
 ///
 /// \param __a
 ///    A 128-bit vector of [4 x float]. The lower 32 bits of this operand are
@@ -1397,7 +1455,8 @@ _mm_cvttss_si64(__m128 __a)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c CVTTPS2PI / VTTPS2PI instructions.
+/// This intrinsic corresponds to the <c> CVTTPS2PI / VTTPS2PI </c>
+///   instructions.
 ///
 /// \param __a
 ///    A 128-bit vector of [4 x float].
@@ -1414,7 +1473,7 @@ _mm_cvttps_pi32(__m128 __a)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c CVTTPS2PI instruction.
+/// This intrinsic corresponds to the <c> CVTTPS2PI </c> instruction.
 ///
 /// \param __a
 ///    A 128-bit vector of [4 x float].
@@ -1432,7 +1491,7 @@ _mm_cvtt_ps2pi(__m128 __a)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VCVTSI2SS / CVTSI2SS instruction.
+/// This intrinsic corresponds to the <c> VCVTSI2SS / CVTSI2SS </c> instruction.
 ///
 /// \param __a
 ///    A 128-bit vector of [4 x float].
@@ -1455,7 +1514,7 @@ _mm_cvtsi32_ss(__m128 __a, int __b)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VCVTSI2SS / CVTSI2SS instruction.
+/// This intrinsic corresponds to the <c> VCVTSI2SS / CVTSI2SS </c> instruction.
 ///
 /// \param __a
 ///    A 128-bit vector of [4 x float].
@@ -1479,7 +1538,7 @@ _mm_cvt_si2ss(__m128 __a, int __b)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VCVTSI2SS / CVTSI2SS instruction.
+/// This intrinsic corresponds to the <c> VCVTSI2SS / CVTSI2SS </c> instruction.
 ///
 /// \param __a
 ///    A 128-bit vector of [4 x float].
@@ -1504,7 +1563,7 @@ _mm_cvtsi64_ss(__m128 __a, long long __b)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c CVTPI2PS instruction.
+/// This intrinsic corresponds to the <c> CVTPI2PS </c> instruction.
 ///
 /// \param __a
 ///    A 128-bit vector of [4 x float].
@@ -1527,7 +1586,7 @@ _mm_cvtpi32_ps(__m128 __a, __m64 __b)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c CVTPI2PS instruction.
+/// This intrinsic corresponds to the <c> CVTPI2PS </c> instruction.
 ///
 /// \param __a
 ///    A 128-bit vector of [4 x float].
@@ -1548,7 +1607,7 @@ _mm_cvt_pi2ps(__m128 __a, __m64 __b)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VMOVSS / MOVSS instruction.
+/// This intrinsic has no corresponding instruction.
 ///
 /// \param __a
 ///    A 128-bit vector of [4 x float]. The lower 32 bits of this operand are
@@ -1560,13 +1619,13 @@ _mm_cvtss_f32(__m128 __a)
   return __a[0];
 }
 
-/// \brief Loads two packed float values from the address __p into the
+/// \brief Loads two packed float values from the address \a __p into the
 ///     high-order bits of a 128-bit vector of [4 x float]. The low-order bits
 ///     are copied from the low-order bits of the first operand.
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VMOVHPD / MOVHPD instruction.
+/// This intrinsic corresponds to the <c> VMOVHPD / MOVHPD </c> instruction.
 ///
 /// \param __a
 ///    A 128-bit vector of [4 x float]. Bits [63:0] are written to bits [63:0]
@@ -1587,13 +1646,13 @@ _mm_loadh_pi(__m128 __a, const __m64 *__p)
   return __builtin_shufflevector(__a, __bb, 0, 1, 4, 5);
 }
 
-/// \brief Loads two packed float values from the address __p into the low-order
-///    bits of a 128-bit vector of [4 x float]. The high-order bits are copied
-///    from the high-order bits of the first operand.
+/// \brief Loads two packed float values from the address \a __p into the
+///    low-order bits of a 128-bit vector of [4 x float]. The high-order bits
+///    are copied from the high-order bits of the first operand.
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VMOVLPD / MOVLPD instruction.
+/// This intrinsic corresponds to the <c> VMOVLPD / MOVLPD </c> instruction.
 ///
 /// \param __a
 ///    A 128-bit vector of [4 x float]. Bits [127:64] are written to bits
@@ -1621,7 +1680,7 @@ _mm_loadl_pi(__m128 __a, const __m64 *__p)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VMOVSS / MOVSS instruction.
+/// This intrinsic corresponds to the <c> VMOVSS / MOVSS </c> instruction.
 ///
 /// \param __p
 ///    A pointer to a 32-bit memory location containing a single-precision
@@ -1644,13 +1703,13 @@ _mm_load_ss(const float *__p)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VMOVSS / MOVSS + \c shuffling
+/// This intrinsic corresponds to the <c> VBROADCASTSS / MOVSS + shuffling </c>
 ///    instruction.
 ///
 /// \param __p
 ///    A pointer to a float value to be loaded and duplicated.
-/// \returns A 128-bit vector of [4 x float] containing the loaded
-///    and duplicated values.
+/// \returns A 128-bit vector of [4 x float] containing the loaded and
+///    duplicated values.
 static __inline__ __m128 __DEFAULT_FN_ATTRS
 _mm_load1_ps(const float *__p)
 {
@@ -1668,12 +1727,12 @@ _mm_load1_ps(const float *__p)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VMOVAPS / MOVAPS instruction.
+/// This intrinsic corresponds to the <c> VMOVAPS / MOVAPS </c> instruction.
 ///
 /// \param __p
 ///    A pointer to a 128-bit memory location. The address of the memory
 ///    location has to be 128-bit aligned.
-/// \returns A 128-bit vector of [4 x float] containing the loaded valus.
+/// \returns A 128-bit vector of [4 x float] containing the loaded values.
 static __inline__ __m128 __DEFAULT_FN_ATTRS
 _mm_load_ps(const float *__p)
 {
@@ -1685,7 +1744,7 @@ _mm_load_ps(const float *__p)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VMOVUPS / MOVUPS instruction.
+/// This intrinsic corresponds to the <c> VMOVUPS / MOVUPS </c> instruction.
 ///
 /// \param __p
 ///    A pointer to a 128-bit memory location. The address of the memory
@@ -1705,7 +1764,7 @@ _mm_loadu_ps(const float *__p)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VMOVAPS / MOVAPS + \c shuffling
+/// This intrinsic corresponds to the <c> VMOVAPS / MOVAPS + shuffling </c>
 ///    instruction.
 ///
 /// \param __p
@@ -1739,7 +1798,7 @@ _mm_undefined_ps(void)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VMOVSS / MOVSS instruction.
+/// This intrinsic corresponds to the <c> VMOVSS / MOVSS </c> instruction.
 ///
 /// \param __w
 ///    A single-precision floating-point value used to initialize the lower 32
@@ -1759,7 +1818,7 @@ _mm_set_ss(float __w)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VPERMILPS / PERMILPS instruction.
+/// This intrinsic corresponds to the <c> VPERMILPS / PERMILPS </c> instruction.
 ///
 /// \param __w
 ///    A single-precision floating-point value used to initialize each vector
@@ -1778,7 +1837,7 @@ _mm_set1_ps(float __w)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VPERMILPS / PERMILPS instruction.
+/// This intrinsic corresponds to the <c> VPERMILPS / PERMILPS </c> instruction.
 ///
 /// \param __w
 ///    A single-precision floating-point value used to initialize each vector
@@ -1850,7 +1909,7 @@ _mm_setr_ps(float __z, float __y, float __x, float __w)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VXORPS / XORPS instruction.
+/// This intrinsic corresponds to the <c> VXORPS / XORPS </c> instruction.
 ///
 /// \returns An initialized 128-bit floating-point vector of [4 x float] with
 ///    all elements set to zero.
@@ -1865,7 +1924,7 @@ _mm_setzero_ps(void)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VPEXTRQ / MOVQ instruction.
+/// This intrinsic corresponds to the <c> VPEXTRQ / PEXTRQ </c> instruction.
 ///
 /// \param __p
 ///    A pointer to a 64-bit memory location.
@@ -1882,7 +1941,7 @@ _mm_storeh_pi(__m64 *__p, __m128 __a)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VMOVLPS / MOVLPS instruction.
+/// This intrinsic corresponds to the <c> VMOVLPS / MOVLPS </c> instruction.
 ///
 /// \param __p
 ///    A pointer to a memory location that will receive the float values.
@@ -1899,7 +1958,7 @@ _mm_storel_pi(__m64 *__p, __m128 __a)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VMOVSS / MOVSS instruction.
+/// This intrinsic corresponds to the <c> VMOVSS / MOVSS </c> instruction.
 ///
 /// \param __p
 ///    A pointer to a 32-bit memory location.
@@ -1919,7 +1978,7 @@ _mm_store_ss(float *__p, __m128 __a)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VMOVUPS / MOVUPS instruction.
+/// This intrinsic corresponds to the <c> VMOVUPS / MOVUPS </c> instruction.
 ///
 /// \param __p
 ///    A pointer to a 128-bit memory location. The address of the memory
@@ -1940,7 +1999,7 @@ _mm_storeu_ps(float *__p, __m128 __a)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VMOVAPS / MOVAPS instruction.
+/// This intrinsic corresponds to the <c> VMOVAPS / MOVAPS </c> instruction.
 ///
 /// \param __p
 ///    A pointer to a 128-bit memory location. The address of the memory
@@ -1958,14 +2017,14 @@ _mm_store_ps(float *__p, __m128 __a)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to \c VMOVAPS / MOVAPS + \c shuffling
+/// This intrinsic corresponds to <c> VMOVAPS / MOVAPS + shuffling </c>
 ///    instruction.
 ///
 /// \param __p
 ///    A pointer to a 128-bit memory location.
 /// \param __a
 ///    A 128-bit vector of [4 x float] whose lower 32 bits are stored to each
-///    of the four contiguous elements pointed by __p.
+///    of the four contiguous elements pointed by \a __p.
 static __inline__ void __DEFAULT_FN_ATTRS
 _mm_store1_ps(float *__p, __m128 __a)
 {
@@ -1978,14 +2037,14 @@ _mm_store1_ps(float *__p, __m128 __a)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to \c VMOVAPS / MOVAPS + \c shuffling
+/// This intrinsic corresponds to <c> VMOVAPS / MOVAPS + shuffling </c>
 ///    instruction.
 ///
 /// \param __p
 ///    A pointer to a 128-bit memory location.
 /// \param __a
 ///    A 128-bit vector of [4 x float] whose lower 32 bits are stored to each
-///    of the four contiguous elements pointed by __p.
+///    of the four contiguous elements pointed by \a __p.
 static __inline__ void __DEFAULT_FN_ATTRS
 _mm_store_ps1(float *__p, __m128 __a)
 {
@@ -1997,7 +2056,7 @@ _mm_store_ps1(float *__p, __m128 __a)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VMOVAPS / MOVAPS + \c shuffling
+/// This intrinsic corresponds to the <c> VMOVAPS / MOVAPS + shuffling </c>
 ///    instruction.
 ///
 /// \param __p
@@ -2012,9 +2071,11 @@ _mm_storer_ps(float *__p, __m128 __a)
   _mm_store_ps(__p, __a);
 }
 
-#define _MM_HINT_T0 3
-#define _MM_HINT_T1 2
-#define _MM_HINT_T2 1
+#define _MM_HINT_ET0 7
+#define _MM_HINT_ET1 6
+#define _MM_HINT_T0  3
+#define _MM_HINT_T1  2
+#define _MM_HINT_T2  1
 #define _MM_HINT_NTA 0
 
 #ifndef _MSC_VER
@@ -2030,21 +2091,23 @@ _mm_storer_ps(float *__p, __m128 __a)
 /// void _mm_prefetch(const void * a, const int sel);
 /// \endcode
 ///
-/// This intrinsic corresponds to the \c PREFETCHNTA instruction.
+/// This intrinsic corresponds to the <c> PREFETCHNTA </c> instruction.
 ///
 /// \param a
 ///    A pointer to a memory location containing a cache line of data.
 /// \param sel
-///    A predefined integer constant specifying the type of prefetch operation:
-///    _MM_HINT_NTA: Move data using the non-temporal access (NTA) hint.
-///    The PREFETCHNTA instruction will be generated.
+///    A predefined integer constant specifying the type of prefetch
+///    operation: \n
+///    _MM_HINT_NTA: Move data using the non-temporal access (NTA) hint. The
+///    PREFETCHNTA instruction will be generated. \n
 ///    _MM_HINT_T0: Move data using the T0 hint. The PREFETCHT0 instruction will
-///    be generated.
+///    be generated. \n
 ///    _MM_HINT_T1: Move data using the T1 hint. The PREFETCHT1 instruction will
-///    be generated.
+///    be generated. \n
 ///    _MM_HINT_T2: Move data using the T2 hint. The PREFETCHT2 instruction will
 ///    be generated.
-#define _mm_prefetch(a, sel) (__builtin_prefetch((void *)(a), 0, (sel)))
+#define _mm_prefetch(a, sel) (__builtin_prefetch((void *)(a), \
+                                                 ((sel) >> 2) & 1, (sel) & 0x3))
 #endif
 
 /// \brief Stores a 64-bit integer in the specified aligned memory location. To
@@ -2053,7 +2116,7 @@ _mm_storer_ps(float *__p, __m128 __a)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c MOVNTQ instruction.
+/// This intrinsic corresponds to the <c> MOVNTQ </c> instruction.
 ///
 /// \param __p
 ///    A pointer to an aligned memory location used to store the register value.
@@ -2071,11 +2134,11 @@ _mm_stream_pi(__m64 *__p, __m64 __a)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VMOVNTPS / MOVNTPS instruction.
+/// This intrinsic corresponds to the <c> VMOVNTPS / MOVNTPS </c> instruction.
 ///
 /// \param __p
 ///    A pointer to a 128-bit aligned memory location that will receive the
-///    integer values.
+///    single-precision floating-point values.
 /// \param __a
 ///    A 128-bit vector of [4 x float] containing the values to be moved.
 static __inline__ void __DEFAULT_FN_ATTRS
@@ -2084,6 +2147,10 @@ _mm_stream_ps(float *__p, __m128 __a)
   __builtin_nontemporal_store((__v4sf)__a, (__v4sf*)__p);
 }
 
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
 /// \brief Forces strong memory ordering (serialization) between store
 ///    instructions preceding this instruction and store instructions following
 ///    this instruction, ensuring the system completes all previous stores
@@ -2091,27 +2158,32 @@ _mm_stream_ps(float *__p, __m128 __a)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c SFENCE instruction.
+/// This intrinsic corresponds to the <c> SFENCE </c> instruction.
 ///
-#if defined(__cplusplus)
-extern "C"
-#endif
 void _mm_sfence(void);
+
+#if defined(__cplusplus)
+} // extern "C"
+#endif
 
 /// \brief Extracts 16-bit element from a 64-bit vector of [4 x i16] and
 ///    returns it, as specified by the immediate integer operand.
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VPEXTRW / PEXTRW instruction.
+/// \code
+/// int _mm_extract_pi16(__m64 a, int n);
+/// \endcode
 ///
-/// \param __a
+/// This intrinsic corresponds to the <c> VPEXTRW / PEXTRW </c> instruction.
+///
+/// \param a
 ///    A 64-bit vector of [4 x i16].
-/// \param __n
-///    An immediate integer operand that determines which bits are extracted:
-///    0: Bits [15:0] are copied to the destination.
-///    1: Bits [31:16] are copied to the destination.
-///    2: Bits [47:32] are copied to the destination.
+/// \param n
+///    An immediate integer operand that determines which bits are extracted: \n
+///    0: Bits [15:0] are copied to the destination. \n
+///    1: Bits [31:16] are copied to the destination. \n
+///    2: Bits [47:32] are copied to the destination. \n
 ///    3: Bits [63:48] are copied to the destination.
 /// \returns A 16-bit integer containing the extracted 16 bits of packed data.
 #define _mm_extract_pi16(a, n) __extension__ ({ \
@@ -2119,26 +2191,30 @@ void _mm_sfence(void);
 
 /// \brief Copies data from the 64-bit vector of [4 x i16] to the destination,
 ///    and inserts the lower 16-bits of an integer operand at the 16-bit offset
-///    specified by the immediate operand __n.
+///    specified by the immediate operand \a n.
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VPINSRW / PINSRW instruction.
+/// \code
+/// __m64 _mm_insert_pi16(__m64 a, int d, int n);
+/// \endcode
 ///
-/// \param __a
+/// This intrinsic corresponds to the <c> PINSRW </c> instruction.
+///
+/// \param a
 ///    A 64-bit vector of [4 x i16].
-/// \param __d
+/// \param d
 ///    An integer. The lower 16-bit value from this operand is written to the
-///    destination at the offset specified by operand __n.
-/// \param __n
+///    destination at the offset specified by operand \a n.
+/// \param n
 ///    An immediate integer operant that determines which the bits to be used
-///    in the destination.
-///    0: Bits [15:0] are copied to the destination.
-///    1: Bits [31:16] are copied to the destination.
-///    2: Bits [47:32] are copied to the destination.
-///    3: Bits [63:48] are copied to the destination.
+///    in the destination. \n
+///    0: Bits [15:0] are copied to the destination. \n
+///    1: Bits [31:16] are copied to the destination. \n
+///    2: Bits [47:32] are copied to the destination. \n
+///    3: Bits [63:48] are copied to the destination.  \n
 ///    The remaining bits in the destination are copied from the corresponding
-///    bits in operand __a.
+///    bits in operand \a a.
 /// \returns A 64-bit integer vector containing the copied packed data from the
 ///    operands.
 #define _mm_insert_pi16(a, d, n) __extension__ ({ \
@@ -2150,7 +2226,7 @@ void _mm_sfence(void);
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c PMAXSW instruction.
+/// This intrinsic corresponds to the <c> PMAXSW </c> instruction.
 ///
 /// \param __a
 ///    A 64-bit integer vector containing one of the source operands.
@@ -2169,7 +2245,7 @@ _mm_max_pi16(__m64 __a, __m64 __b)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c PMAXUB instruction.
+/// This intrinsic corresponds to the <c> PMAXUB </c> instruction.
 ///
 /// \param __a
 ///    A 64-bit integer vector containing one of the source operands.
@@ -2188,7 +2264,7 @@ _mm_max_pu8(__m64 __a, __m64 __b)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c PMINSW instruction.
+/// This intrinsic corresponds to the <c> PMINSW </c> instruction.
 ///
 /// \param __a
 ///    A 64-bit integer vector containing one of the source operands.
@@ -2207,7 +2283,7 @@ _mm_min_pi16(__m64 __a, __m64 __b)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c PMINUB instruction.
+/// This intrinsic corresponds to the <c> PMINUB </c> instruction.
 ///
 /// \param __a
 ///    A 64-bit integer vector containing one of the source operands.
@@ -2221,17 +2297,17 @@ _mm_min_pu8(__m64 __a, __m64 __b)
 }
 
 /// \brief Takes the most significant bit from each 8-bit element in a 64-bit
-///    integer vector to create a 16-bit mask value. Zero-extends the value to
+///    integer vector to create an 8-bit mask value. Zero-extends the value to
 ///    32-bit integer and writes it to the destination.
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c PMOVMSKB instruction.
+/// This intrinsic corresponds to the <c> PMOVMSKB </c> instruction.
 ///
 /// \param __a
 ///    A 64-bit integer vector containing the values with bits to be extracted.
-/// \returns The most significant bit from each 8-bit element in the operand,
-///    written to bits [15:0].
+/// \returns The most significant bit from each 8-bit element in \a __a,
+///    written to bits [7:0].
 static __inline__ int __DEFAULT_FN_ATTRS
 _mm_movemask_pi8(__m64 __a)
 {
@@ -2244,7 +2320,7 @@ _mm_movemask_pi8(__m64 __a)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c PMULHUW instruction.
+/// This intrinsic corresponds to the <c> PMULHUW </c> instruction.
 ///
 /// \param __a
 ///    A 64-bit integer vector containing one of the source operands.
@@ -2262,27 +2338,31 @@ _mm_mulhi_pu16(__m64 __a, __m64 __b)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c PSHUFW instruction.
-///
 /// \code
 /// __m64 _mm_shuffle_pi16(__m64 a, const int n);
 /// \endcode
+///
+/// This intrinsic corresponds to the <c> PSHUFW </c> instruction.
 ///
 /// \param a
 ///    A 64-bit integer vector containing the values to be shuffled.
 /// \param n
 ///    An immediate value containing an 8-bit value specifying which elements to
-///    copy from a. The destinations within the 64-bit destination are assigned
-///    values as follows:
-///    Bits [1:0] are used to assign values to bits [15:0] in the destination.
-///    Bits [3:2] are used to assign values to bits [31:16] in the destination.
-///    Bits [5:4] are used to assign values to bits [47:32] in the destination.
-///    Bits [7:6] are used to assign values to bits [63:48] in the destination.
-///    Bit value assignments:
-///    00: assigned from bits [15:0] of a.
-///    01: assigned from bits [31:16] of a.
-///    10: assigned from bits [47:32] of a.
-///    11: assigned from bits [63:48] of a.
+///    copy from \a a. The destinations within the 64-bit destination are
+///    assigned values as follows: \n
+///    Bits [1:0] are used to assign values to bits [15:0] in the
+///    destination. \n
+///    Bits [3:2] are used to assign values to bits [31:16] in the
+///    destination. \n
+///    Bits [5:4] are used to assign values to bits [47:32] in the
+///    destination. \n
+///    Bits [7:6] are used to assign values to bits [63:48] in the
+///    destination. \n
+///    Bit value assignments: \n
+///    00: assigned from bits [15:0] of \a a. \n
+///    01: assigned from bits [31:16] of \a a. \n
+///    10: assigned from bits [47:32] of \a a. \n
+///    11: assigned from bits [63:48] of \a a.
 /// \returns A 64-bit integer vector containing the shuffled values.
 #define _mm_shuffle_pi16(a, n) __extension__ ({ \
   (__m64)__builtin_ia32_pshufw((__v4hi)(__m64)(a), (n)); })
@@ -2290,20 +2370,22 @@ _mm_mulhi_pu16(__m64 __a, __m64 __b)
 /// \brief Conditionally copies the values from each 8-bit element in the first
 ///    64-bit integer vector operand to the specified memory location, as
 ///    specified by the most significant bit in the corresponding element in the
-///    second 64-bit integer vector operand. To minimize caching, the data is
-///    flagged as non-temporal (unlikely to be used again soon).
+///    second 64-bit integer vector operand.
+///
+///    To minimize caching, the data is flagged as non-temporal
+///    (unlikely to be used again soon).
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c MASKMOVQ instruction.
+/// This intrinsic corresponds to the <c> MASKMOVQ </c> instruction.
 ///
 /// \param __d
 ///    A 64-bit integer vector containing the values with elements to be copied.
 /// \param __n
 ///    A 64-bit integer vector operand. The most significant bit from each 8-bit
-///    element determines whether the corresponding element in operand __d is
-///    copied. If the most significant bit of a given element is 1, the
-///    corresponding element in operand __d is copied.
+///    element determines whether the corresponding element in operand \a __d
+///    is copied. If the most significant bit of a given element is 1, the
+///    corresponding element in operand \a __d is copied.
 /// \param __p
 ///    A pointer to a 64-bit memory location that will receive the conditionally
 ///    copied integer values. The address of the memory location does not have
@@ -2320,7 +2402,7 @@ _mm_maskmove_si64(__m64 __d, __m64 __n, char *__p)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c PAVGB instruction.
+/// This intrinsic corresponds to the <c> PAVGB </c> instruction.
 ///
 /// \param __a
 ///    A 64-bit integer vector containing one of the source operands.
@@ -2339,7 +2421,7 @@ _mm_avg_pu8(__m64 __a, __m64 __b)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c PAVGW instruction.
+/// This intrinsic corresponds to the <c> PAVGW </c> instruction.
 ///
 /// \param __a
 ///    A 64-bit integer vector containing one of the source operands.
@@ -2359,7 +2441,7 @@ _mm_avg_pu16(__m64 __a, __m64 __b)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c PSADBW instruction.
+/// This intrinsic corresponds to the <c> PSADBW </c> instruction.
 ///
 /// \param __a
 ///    A 64-bit integer vector containing one of the source operands.
@@ -2379,76 +2461,106 @@ extern "C" {
 #endif
 
 /// \brief Returns the contents of the MXCSR register as a 32-bit unsigned
-///    integer value. There are several groups of macros associated with this
+///    integer value.
+///
+///    There are several groups of macros associated with this
 ///    intrinsic, including:
-///    * For checking exception states: _MM_EXCEPT_INVALID, _MM_EXCEPT_DIV_ZERO,
+///    <ul>
+///    <li>
+///      For checking exception states: _MM_EXCEPT_INVALID, _MM_EXCEPT_DIV_ZERO,
 ///      _MM_EXCEPT_DENORM, _MM_EXCEPT_OVERFLOW, _MM_EXCEPT_UNDERFLOW,
 ///      _MM_EXCEPT_INEXACT. There is a convenience wrapper
 ///      _MM_GET_EXCEPTION_STATE().
-///    * For checking exception masks: _MM_MASK_UNDERFLOW, _MM_MASK_OVERFLOW,
+///    </li>
+///    <li>
+///      For checking exception masks: _MM_MASK_UNDERFLOW, _MM_MASK_OVERFLOW,
 ///      _MM_MASK_INVALID, _MM_MASK_DENORM, _MM_MASK_DIV_ZERO, _MM_MASK_INEXACT.
 ///      There is a convenience wrapper _MM_GET_EXCEPTION_MASK().
-///    * For checking rounding modes: _MM_ROUND_NEAREST, _MM_ROUND_DOWN,
+///    </li>
+///    <li>
+///      For checking rounding modes: _MM_ROUND_NEAREST, _MM_ROUND_DOWN,
 ///      _MM_ROUND_UP, _MM_ROUND_TOWARD_ZERO. There is a convenience wrapper
-///      _MM_GET_ROUNDING_MODE(x) where x is one of these macros.
-///    * For checking flush-to-zero mode: _MM_FLUSH_ZERO_ON, _MM_FLUSH_ZERO_OFF.
+///      _MM_GET_ROUNDING_MODE().
+///    </li>
+///    <li>
+///      For checking flush-to-zero mode: _MM_FLUSH_ZERO_ON, _MM_FLUSH_ZERO_OFF.
 ///      There is a convenience wrapper _MM_GET_FLUSH_ZERO_MODE().
-///    * For checking denormals-are-zero mode: _MM_DENORMALS_ZERO_ON,
+///    </li>
+///    <li>
+///      For checking denormals-are-zero mode: _MM_DENORMALS_ZERO_ON,
 ///      _MM_DENORMALS_ZERO_OFF. There is a convenience wrapper
 ///      _MM_GET_DENORMALS_ZERO_MODE().
+///    </li>
+///    </ul>
 ///
-///    For example, the expression below checks if an overflow exception has
+///    For example, the following expression checks if an overflow exception has
 ///    occurred:
 ///      ( _mm_getcsr() & _MM_EXCEPT_OVERFLOW )
 ///
-///    The following example gets the current rounding mode:
+///    The following expression gets the current rounding mode:
 ///      _MM_GET_ROUNDING_MODE()
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VSTMXCSR / STMXCSR instruction.
+/// This intrinsic corresponds to the <c> VSTMXCSR / STMXCSR </c> instruction.
 ///
 /// \returns A 32-bit unsigned integer containing the contents of the MXCSR
 ///    register.
 unsigned int _mm_getcsr(void);
 
-/// \brief Sets the MXCSR register with the 32-bit unsigned integer value. There
-///    are several groups of macros associated with this intrinsic, including:
-///    * For setting exception states: _MM_EXCEPT_INVALID, _MM_EXCEPT_DIV_ZERO,
+/// \brief Sets the MXCSR register with the 32-bit unsigned integer value.
+///
+///    There are several groups of macros associated with this intrinsic,
+///    including:
+///    <ul>
+///    <li>
+///      For setting exception states: _MM_EXCEPT_INVALID, _MM_EXCEPT_DIV_ZERO,
 ///      _MM_EXCEPT_DENORM, _MM_EXCEPT_OVERFLOW, _MM_EXCEPT_UNDERFLOW,
 ///      _MM_EXCEPT_INEXACT. There is a convenience wrapper
 ///      _MM_SET_EXCEPTION_STATE(x) where x is one of these macros.
-///    * For setting exception masks: _MM_MASK_UNDERFLOW, _MM_MASK_OVERFLOW,
+///    </li>
+///    <li>
+///      For setting exception masks: _MM_MASK_UNDERFLOW, _MM_MASK_OVERFLOW,
 ///      _MM_MASK_INVALID, _MM_MASK_DENORM, _MM_MASK_DIV_ZERO, _MM_MASK_INEXACT.
 ///      There is a convenience wrapper _MM_SET_EXCEPTION_MASK(x) where x is one
 ///      of these macros.
-///    * For setting rounding modes: _MM_ROUND_NEAREST, _MM_ROUND_DOWN,
+///    </li>
+///    <li>
+///      For setting rounding modes: _MM_ROUND_NEAREST, _MM_ROUND_DOWN,
 ///      _MM_ROUND_UP, _MM_ROUND_TOWARD_ZERO. There is a convenience wrapper
 ///      _MM_SET_ROUNDING_MODE(x) where x is one of these macros.
-///    * For setting flush-to-zero mode: _MM_FLUSH_ZERO_ON, _MM_FLUSH_ZERO_OFF.
+///    </li>
+///    <li>
+///      For setting flush-to-zero mode: _MM_FLUSH_ZERO_ON, _MM_FLUSH_ZERO_OFF.
 ///      There is a convenience wrapper _MM_SET_FLUSH_ZERO_MODE(x) where x is
 ///      one of these macros.
-///    * For setting denormals-are-zero mode: _MM_DENORMALS_ZERO_ON,
+///    </li>
+///    <li>
+///      For setting denormals-are-zero mode: _MM_DENORMALS_ZERO_ON,
 ///      _MM_DENORMALS_ZERO_OFF. There is a convenience wrapper
 ///      _MM_SET_DENORMALS_ZERO_MODE(x) where x is one of these macros.
+///    </li>
+///    </ul>
 ///
 ///    For example, the following expression causes subsequent floating-point
 ///    operations to round up:
 ///      _mm_setcsr(_mm_getcsr() | _MM_ROUND_UP)
 ///
 ///    The following example sets the DAZ and FTZ flags:
-///      void setFlags() {
-///        _MM_SET_FLUSH_ZERO_MODE(_MM_FLUSH_ZERO_ON)
-///        _MM_SET_DENORMALS_ZERO_MODE(_MM_DENORMALS_ZERO_ON)
-///      }
+///    \code
+///    void setFlags() {
+///      _MM_SET_FLUSH_ZERO_MODE(_MM_FLUSH_ZERO_ON);
+///      _MM_SET_DENORMALS_ZERO_MODE(_MM_DENORMALS_ZERO_ON);
+///    }
+///    \endcode
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VLDMXCSR / LDMXCSR instruction.
+/// This intrinsic corresponds to the <c> VLDMXCSR / LDMXCSR </c> instruction.
 ///
 /// \param __i
 ///    A 32-bit unsigned integer value to be written to the MXCSR register.
-void _mm_setcsr(unsigned int);
+void _mm_setcsr(unsigned int __i);
 
 #if defined(__cplusplus)
 } // extern "C"
@@ -2463,7 +2575,7 @@ void _mm_setcsr(unsigned int);
 /// __m128 _mm_shuffle_ps(__m128 a, __m128 b, const int mask);
 /// \endcode
 ///
-/// This intrinsic corresponds to the \c VSHUFPS / SHUFPS instruction.
+/// This intrinsic corresponds to the <c> VSHUFPS / SHUFPS </c> instruction.
 ///
 /// \param a
 ///    A 128-bit vector of [4 x float].
@@ -2471,18 +2583,23 @@ void _mm_setcsr(unsigned int);
 ///    A 128-bit vector of [4 x float].
 /// \param mask
 ///    An immediate value containing an 8-bit value specifying which elements to
-///    copy from a and b.
-///    Bits [3:0] specify the values copied from operand a.
-///    Bits [7:4] specify the values copied from operand b. The destinations
-///    within the 128-bit destination are assigned values as follows:
-///    Bits [1:0] are used to assign values to bits [31:0] in the destination.
-///    Bits [3:2] are used to assign values to bits [63:32] in the destination.
-///    Bits [5:4] are used to assign values to bits [95:64] in the destination.
-///    Bits [7:6] are used to assign values to bits [127:96] in the destination.
-///    Bit value assignments:
-///    00: Bits [31:0] copied from the specified operand.
-///    01: Bits [63:32] copied from the specified operand.
-///    10: Bits [95:64] copied from the specified operand.
+///    copy from \a a and \a b. \n
+///    Bits [3:0] specify the values copied from operand \a a. \n
+///    Bits [7:4] specify the values copied from operand \a b. \n
+///    The destinations within the 128-bit destination are assigned values as
+///    follows: \n
+///    Bits [1:0] are used to assign values to bits [31:0] in the
+///    destination. \n
+///    Bits [3:2] are used to assign values to bits [63:32] in the
+///    destination. \n
+///    Bits [5:4] are used to assign values to bits [95:64] in the
+///    destination. \n
+///    Bits [7:6] are used to assign values to bits [127:96] in the
+///    destination. \n
+///    Bit value assignments: \n
+///    00: Bits [31:0] copied from the specified operand. \n
+///    01: Bits [63:32] copied from the specified operand. \n
+///    10: Bits [95:64] copied from the specified operand. \n
 ///    11: Bits [127:96] copied from the specified operand.
 /// \returns A 128-bit vector of [4 x float] containing the shuffled values.
 #define _mm_shuffle_ps(a, b, mask) __extension__ ({ \
@@ -2493,20 +2610,19 @@ void _mm_setcsr(unsigned int);
                                   4 + (((mask) >> 6) & 0x3)); })
 
 /// \brief Unpacks the high-order (index 2,3) values from two 128-bit vectors of
-///    [4 x float] and interleaves them into a 128-bit vector of [4 x
-///    float].
+///    [4 x float] and interleaves them into a 128-bit vector of [4 x float].
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VUNPCKHPS / UNPCKHPS instruction.
+/// This intrinsic corresponds to the <c> VUNPCKHPS / UNPCKHPS </c> instruction.
 ///
 /// \param __a
-///    A 128-bit vector of [4 x float].
-///    Bits [95:64] are written to bits [31:0] of the destination.
+///    A 128-bit vector of [4 x float]. \n
+///    Bits [95:64] are written to bits [31:0] of the destination. \n
 ///    Bits [127:96] are written to bits [95:64] of the destination.
 /// \param __b
 ///    A 128-bit vector of [4 x float].
-///    Bits [95:64] are written to bits [63:32] of the destination.
+///    Bits [95:64] are written to bits [63:32] of the destination. \n
 ///    Bits [127:96] are written to bits [127:96] of the destination.
 /// \returns A 128-bit vector of [4 x float] containing the interleaved values.
 static __inline__ __m128 __DEFAULT_FN_ATTRS
@@ -2516,20 +2632,19 @@ _mm_unpackhi_ps(__m128 __a, __m128 __b)
 }
 
 /// \brief Unpacks the low-order (index 0,1) values from two 128-bit vectors of
-///    [4 x float] and interleaves them into a 128-bit vector of [4 x
-///    float].
+///    [4 x float] and interleaves them into a 128-bit vector of [4 x float].
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VUNPCKLPS / UNPCKLPS instruction.
+/// This intrinsic corresponds to the <c> VUNPCKLPS / UNPCKLPS </c> instruction.
 ///
 /// \param __a
-///    A 128-bit vector of [4 x float].
-///    Bits [31:0] are written to bits [31:0] of the destination.
+///    A 128-bit vector of [4 x float]. \n
+///    Bits [31:0] are written to bits [31:0] of the destination.  \n
 ///    Bits [63:32] are written to bits [95:64] of the destination.
 /// \param __b
-///    A 128-bit vector of [4 x float].
-///    Bits [31:0] are written to bits [63:32] of the destination.
+///    A 128-bit vector of [4 x float]. \n
+///    Bits [31:0] are written to bits [63:32] of the destination. \n
 ///    Bits [63:32] are written to bits [127:96] of the destination.
 /// \returns A 128-bit vector of [4 x float] containing the interleaved values.
 static __inline__ __m128 __DEFAULT_FN_ATTRS
@@ -2544,7 +2659,8 @@ _mm_unpacklo_ps(__m128 __a, __m128 __b)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VMOVSS / MOVSS instruction.
+/// This intrinsic corresponds to the <c> VBLENDPS / BLENDPS / MOVSS </c>
+///    instruction.
 ///
 /// \param __a
 ///    A 128-bit floating-point vector of [4 x float]. The upper 96 bits are
@@ -2565,7 +2681,7 @@ _mm_move_ss(__m128 __a, __m128 __b)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VUNPCKHPD / UNPCKHPD instruction.
+/// This intrinsic corresponds to the <c> VUNPCKHPD / UNPCKHPD </c> instruction.
 ///
 /// \param __a
 ///    A 128-bit floating-point vector of [4 x float]. The upper 64 bits are
@@ -2586,7 +2702,7 @@ _mm_movehl_ps(__m128 __a, __m128 __b)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VUNPCKLPD / UNPCKLPD instruction.
+/// This intrinsic corresponds to the <c> VUNPCKLPD / UNPCKLPD </c> instruction.
 ///
 /// \param __a
 ///    A 128-bit floating-point vector of [4 x float]. The lower 64 bits are
@@ -2606,7 +2722,7 @@ _mm_movelh_ps(__m128 __a, __m128 __b)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c CVTPI2PS + \c COMPOSITE instruction.
+/// This intrinsic corresponds to the <c> CVTPI2PS + COMPOSITE </c> instruction.
 ///
 /// \param __a
 ///    A 64-bit vector of [4 x i16]. The elements of the destination are copied
@@ -2636,7 +2752,7 @@ _mm_cvtpi16_ps(__m64 __a)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c CVTPI2PS + \c COMPOSITE instruction.
+/// This intrinsic corresponds to the <c> CVTPI2PS + COMPOSITE </c> instruction.
 ///
 /// \param __a
 ///    A 64-bit vector of 16-bit unsigned integer values. The elements of the
@@ -2665,7 +2781,7 @@ _mm_cvtpu16_ps(__m64 __a)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c CVTPI2PS + \c COMPOSITE instruction.
+/// This intrinsic corresponds to the <c> CVTPI2PS + COMPOSITE </c> instruction.
 ///
 /// \param __a
 ///    A 64-bit vector of [8 x i8]. The elements of the destination are copied
@@ -2689,7 +2805,7 @@ _mm_cvtpi8_ps(__m64 __a)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c CVTPI2PS + \c COMPOSITE instruction.
+/// This intrinsic corresponds to the <c> CVTPI2PS + COMPOSITE </c> instruction.
 ///
 /// \param __a
 ///    A 64-bit vector of unsigned 8-bit integer values. The elements of the
@@ -2713,7 +2829,7 @@ _mm_cvtpu8_ps(__m64 __a)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c CVTPI2PS + \c COMPOSITE instruction.
+/// This intrinsic corresponds to the <c> CVTPI2PS + COMPOSITE </c> instruction.
 ///
 /// \param __a
 ///    A 64-bit vector of [2 x i32]. The lower elements of the destination are
@@ -2738,15 +2854,16 @@ _mm_cvtpi32x2_ps(__m64 __a, __m64 __b)
 
 /// \brief Converts each single-precision floating-point element of a 128-bit
 ///    floating-point vector of [4 x float] into a 16-bit signed integer, and
-///    packs the results into a 64-bit integer vector of [4 x i16]. If the
-///    floating-point element is NaN or infinity, or if the floating-point
-///    element is greater than 0x7FFFFFFF or less than -0x8000, it is converted
-///    to 0x8000. Otherwise if the floating-point element is greater
-///    than 0x7FFF, it is converted to 0x7FFF.
+///    packs the results into a 64-bit integer vector of [4 x i16].
+///
+///    If the floating-point element is NaN or infinity, or if the
+///    floating-point element is greater than 0x7FFFFFFF or less than -0x8000,
+///    it is converted to 0x8000. Otherwise if the floating-point element is
+///    greater than 0x7FFF, it is converted to 0x7FFF.
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c CVTPS2PI + \c COMPOSITE instruction.
+/// This intrinsic corresponds to the <c> CVTPS2PI + COMPOSITE </c> instruction.
 ///
 /// \param __a
 ///    A 128-bit floating-point vector of [4 x float].
@@ -2767,15 +2884,16 @@ _mm_cvtps_pi16(__m128 __a)
 /// \brief Converts each single-precision floating-point element of a 128-bit
 ///    floating-point vector of [4 x float] into an 8-bit signed integer, and
 ///    packs the results into the lower 32 bits of a 64-bit integer vector of
-///    [8 x i8]. The upper 32 bits of the vector are set to 0. If the
-///    floating-point element is NaN or infinity, or if the floating-point
-///    element is greater than 0x7FFFFFFF or less than -0x80, it is converted
-///    to 0x80. Otherwise if the floating-point element is greater
+///    [8 x i8]. The upper 32 bits of the vector are set to 0.
+///
+///    If the floating-point element is NaN or infinity, or if the
+///    floating-point element is greater than 0x7FFFFFFF or less than -0x80, it
+///    is converted to 0x80. Otherwise if the floating-point element is greater
 ///    than 0x7F, it is converted to 0x7F.
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c CVTPS2PI + \c COMPOSITE instruction.
+/// This intrinsic corresponds to the <c> CVTPS2PI + COMPOSITE </c> instruction.
 ///
 /// \param __a
 ///    128-bit floating-point vector of [4 x float].
@@ -2799,7 +2917,7 @@ _mm_cvtps_pi8(__m128 __a)
 ///
 /// \headerfile <x86intrin.h>
 ///
-/// This intrinsic corresponds to the \c VMOVMSKPS / MOVMSKPS instruction.
+/// This intrinsic corresponds to the <c> VMOVMSKPS / MOVMSKPS </c> instruction.
 ///
 /// \param __a
 ///    A 128-bit floating-point vector of [4 x float].

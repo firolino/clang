@@ -15,6 +15,10 @@ struct blah {
   };
 };
 
+// This used to crash clang.
+struct {
+}(s1);
+
 int foo(const struct blah *b) {
   // CHECK: return b->b;
   return b->b;
@@ -65,3 +69,12 @@ void initializers() {
   // CHECK: } z = {(struct Z){}};
   } z = {(struct Z){}};
 }
+
+// CHECK-LABEL: enum EnumWithAttributes {
+enum EnumWithAttributes {
+  // CHECK-NEXT: EnumWithAttributesFoo __attribute__((deprecated(""))),
+  EnumWithAttributesFoo __attribute__((deprecated)),
+  // CHECK-NEXT: EnumWithAttributesBar __attribute__((unavailable(""))) = 50
+  EnumWithAttributesBar __attribute__((unavailable)) = 50
+  // CHECK-NEXT: } __attribute__((deprecated("")))
+} __attribute__((deprecated));

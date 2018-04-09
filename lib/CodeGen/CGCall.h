@@ -18,6 +18,7 @@
 #include "CGValue.h"
 #include "EHScopeStack.h"
 #include "clang/AST/CanonicalType.h"
+#include "clang/AST/GlobalDecl.h"
 #include "clang/AST/Type.h"
 #include "llvm/IR/Value.h"
 
@@ -25,10 +26,10 @@
 #include "ABIInfo.h"
 
 namespace llvm {
-  class AttributeSet;
-  class Function;
-  class Type;
-  class Value;
+class AttributeList;
+class Function;
+class Type;
+class Value;
 }
 
 namespace clang {
@@ -39,21 +40,225 @@ namespace clang {
   class VarDecl;
 
 namespace CodeGen {
-  typedef SmallVector<llvm::AttributeSet, 8> AttributeListType;
+
+/// Abstract information about a function or function prototype.
+class CGCalleeInfo {
+  /// \brief The function prototype of the callee.
+  const FunctionProtoType *CalleeProtoTy;
+  /// \brief The function declaration of the callee.
+  const Decl *CalleeDecl;
+
+public:
+  explicit CGCalleeInfo() : CalleeProtoTy(nullptr), CalleeDecl(nullptr) {}
+  CGCalleeInfo(const FunctionProtoType *calleeProtoTy, const Decl *calleeDecl)
+      : CalleeProtoTy(calleeProtoTy), CalleeDecl(calleeDecl) {}
+  CGCalleeInfo(const FunctionProtoType *calleeProtoTy)
+      : CalleeProtoTy(calleeProtoTy), CalleeDecl(nullptr) {}
+  CGCalleeInfo(const Decl *calleeDecl)
+      : CalleeProtoTy(nullptr), CalleeDecl(calleeDecl) {}
+
+  const FunctionProtoType *getCalleeFunctionProtoType() const {
+    return CalleeProtoTy;
+  }
+  const Decl *getCalleeDecl() const { return CalleeDecl; }
+  };
+
+  /// All available information about a concrete callee.
+  class CGCallee {
+    enum class SpecialKind : uintptr_t {
+      Invalid,
+      Builtin,
+      PseudoDestructor,
+      Virtual,
+
+      Last = Virtual
+    };
+
+    struct BuiltinInfoStorage {
+      const FunctionDecl *Decl;
+      unsigned ID;
+    };
+    struct PseudoDestructorInfoStorage {
+      const CXXPseudoDestructorExpr *Expr;
+    };
+    struct VirtualInfoStorage {
+      const CallExpr *CE;
+      GlobalDecl MD;
+      Address Addr;
+      llvm::FunctionType *FTy;
+    };
+
+    SpecialKind KindOrFunctionPointer;
+    union {
+      CGCalleeInfo AbstractInfo;
+      BuiltinInfoStorage BuiltinInfo;
+      PseudoDestructorInfoStorage PseudoDestructorInfo;
+      VirtualInfoStorage VirtualInfo;
+    };
+
+    explicit CGCallee(SpecialKind kind) : KindOrFunctionPointer(kind) {}
+
+    CGCallee(const FunctionDecl *builtinDecl, unsigned builtinID)
+        : KindOrFunctionPointer(SpecialKind::Builtin) {
+      BuiltinInfo.Decl = builtinDecl;
+      BuiltinInfo.ID = builtinID;
+    }
+
+  public:
+    CGCallee() : KindOrFunctionPointer(SpecialKind::Invalid) {}
+
+    /// Construct a callee.  Call this constructor directly when this
+    /// isn't a direct call.
+    CGCallee(const CGCalleeInfo &abstractInfo, llvm::Value *functionPtr)
+        : KindOrFunctionPointer(SpecialKind(uintptr_t(functionPtr))) {
+      AbstractInfo = abstractInfo;
+      assert(functionPtr && "configuring callee without function pointer");
+      assert(functionPtr->getType()->isPointerTy());
+      assert(functionPtr->getType()->getPointerElementType()->isFunctionTy());
+    }
+
+    static CGCallee forBuiltin(unsigned builtinID,
+                               const FunctionDecl *builtinDecl) {
+      CGCallee result(SpecialKind::Builtin);
+      result.BuiltinInfo.Decl = builtinDecl;
+      result.BuiltinInfo.ID = builtinID;
+      return result;
+    }
+
+    static CGCallee forPseudoDestructor(const CXXPseudoDestructorExpr *E) {
+      CGCallee result(SpecialKind::PseudoDestructor);
+      result.PseudoDestructorInfo.Expr = E;
+      return result;
+    }
+
+    static CGCallee forDirect(llvm::Constant *functionPtr,
+                        const CGCalleeInfo &abstractInfo = CGCalleeInfo()) {
+      return CGCallee(abstractInfo, functionPtr);
+    }
+
+    static CGCallee forVirtual(const CallExpr *CE, GlobalDecl MD, Address Addr,
+                               llvm::FunctionType *FTy) {
+      CGCallee result(SpecialKind::Virtual);
+      result.VirtualInfo.CE = CE;
+      result.VirtualInfo.MD = MD;
+      result.VirtualInfo.Addr = Addr;
+      result.VirtualInfo.FTy = FTy;
+      return result;
+    }
+
+    bool isBuiltin() const {
+      return KindOrFunctionPointer == SpecialKind::Builtin;
+    }
+    const FunctionDecl *getBuiltinDecl() const {
+      assert(isBuiltin());
+      return BuiltinInfo.Decl;
+    }
+    unsigned getBuiltinID() const {
+      assert(isBuiltin());
+      return BuiltinInfo.ID;
+    }
+
+    bool isPseudoDestructor() const {
+      return KindOrFunctionPointer == SpecialKind::PseudoDestructor;
+    }
+    const CXXPseudoDestructorExpr *getPseudoDestructorExpr() const {
+      assert(isPseudoDestructor());
+      return PseudoDestructorInfo.Expr;
+    }
+
+    bool isOrdinary() const {
+      return uintptr_t(KindOrFunctionPointer) > uintptr_t(SpecialKind::Last);
+    }
+    CGCalleeInfo getAbstractInfo() const {
+      if (isVirtual())
+        return VirtualInfo.MD.getDecl();
+      assert(isOrdinary());
+      return AbstractInfo;
+    }
+    llvm::Value *getFunctionPointer() const {
+      assert(isOrdinary());
+      return reinterpret_cast<llvm::Value*>(uintptr_t(KindOrFunctionPointer));
+    }
+    void setFunctionPointer(llvm::Value *functionPtr) {
+      assert(isOrdinary());
+      KindOrFunctionPointer = SpecialKind(uintptr_t(functionPtr));
+    }
+
+    bool isVirtual() const {
+      return KindOrFunctionPointer == SpecialKind::Virtual;
+    }
+    const CallExpr *getVirtualCallExpr() const {
+      assert(isVirtual());
+      return VirtualInfo.CE;
+    }
+    GlobalDecl getVirtualMethodDecl() const {
+      assert(isVirtual());
+      return VirtualInfo.MD;
+    }
+    Address getThisAddress() const {
+      assert(isVirtual());
+      return VirtualInfo.Addr;
+    }
+
+    llvm::FunctionType *getFunctionType() const {
+      if (isVirtual())
+        return VirtualInfo.FTy;
+      return cast<llvm::FunctionType>(
+          getFunctionPointer()->getType()->getPointerElementType());
+    }
+
+    /// If this is a delayed callee computation of some sort, prepare
+    /// a concrete callee.
+    CGCallee prepareConcreteCallee(CodeGenFunction &CGF) const;
+  };
 
   struct CallArg {
-    RValue RV;
+  private:
+    union {
+      RValue RV;
+      LValue LV; /// The argument is semantically a load from this l-value.
+    };
+    bool HasLV;
+
+    /// A data-flow flag to make sure getRValue and/or copyInto are not
+    /// called twice for duplicated IR emission.
+    mutable bool IsUsed;
+
+  public:
     QualType Ty;
-    bool NeedsCopy;
-    CallArg(RValue rv, QualType ty, bool needscopy)
-    : RV(rv), Ty(ty), NeedsCopy(needscopy)
-    { }
+    CallArg(RValue rv, QualType ty)
+        : RV(rv), HasLV(false), IsUsed(false), Ty(ty) {}
+    CallArg(LValue lv, QualType ty)
+        : LV(lv), HasLV(true), IsUsed(false), Ty(ty) {}
+    bool hasLValue() const { return HasLV; }
+    QualType getType() const { return Ty; }
+
+    /// \returns an independent RValue. If the CallArg contains an LValue,
+    /// a temporary copy is returned.
+    RValue getRValue(CodeGenFunction &CGF) const;
+
+    LValue getKnownLValue() const {
+      assert(HasLV && !IsUsed);
+      return LV;
+    }
+    RValue getKnownRValue() const {
+      assert(!HasLV && !IsUsed);
+      return RV;
+    }
+    void setRValue(RValue _RV) {
+      assert(!HasLV);
+      RV = _RV;
+    }
+
+    bool isAggregate() const { return HasLV || RV.isAggregate(); }
+
+    void copyInto(CodeGenFunction &CGF, Address A) const;
   };
 
   /// CallArgList - Type for representing both the value and type of
   /// arguments in a call.
   class CallArgList :
-    public SmallVector<CallArg, 16> {
+    public SmallVector<CallArg, 8> {
   public:
     CallArgList() : StackBase(nullptr) {}
 
@@ -77,8 +282,10 @@ namespace CodeGen {
       llvm::Instruction *IsActiveIP;
     };
 
-    void add(RValue rvalue, QualType type, bool needscopy = false) {
-      push_back(CallArg(rvalue, type, needscopy));
+    void add(RValue rvalue, QualType type) { push_back(CallArg(rvalue, type)); }
+
+    void addUncopiedAggregate(LValue LV, QualType type) {
+      push_back(CallArg(LV, type));
     }
 
     /// Add all the arguments from another CallArgList to this one. After doing

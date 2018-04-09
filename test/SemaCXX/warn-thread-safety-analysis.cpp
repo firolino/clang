@@ -1,4 +1,6 @@
-// RUN: %clang_cc1 -fsyntax-only -verify -std=c++11 -Wthread-safety -Wthread-safety-beta -Wno-thread-safety-negative -fcxx-exceptions %s
+// RUN: %clang_cc1 -fsyntax-only -verify -std=c++11 -Wthread-safety -Wthread-safety-beta -Wno-thread-safety-negative -fcxx-exceptions -DUSE_ASSERT_CAPABILITY=0 %s
+// RUN: %clang_cc1 -fsyntax-only -verify -std=c++11 -Wthread-safety -Wthread-safety-beta -Wno-thread-safety-negative -fcxx-exceptions -DUSE_ASSERT_CAPABILITY=1 %s
+// RUN: %clang_cc1 -fsyntax-only -verify -std=c++17 -Wthread-safety -Wthread-safety-beta -Wno-thread-safety-negative -fcxx-exceptions -DUSE_ASSERT_CAPABILITY=0 %s
 
 // FIXME: should also run  %clang_cc1 -fsyntax-only -verify -Wthread-safety -std=c++11 -Wc++98-compat %s
 // FIXME: should also run  %clang_cc1 -fsyntax-only -verify -Wthread-safety %s
@@ -13,8 +15,15 @@
 #define ACQUIRED_BEFORE(...) __attribute__((acquired_before(__VA_ARGS__)))
 #define EXCLUSIVE_LOCK_FUNCTION(...)    __attribute__((exclusive_lock_function(__VA_ARGS__)))
 #define SHARED_LOCK_FUNCTION(...)       __attribute__((shared_lock_function(__VA_ARGS__)))
+
+#if USE_ASSERT_CAPABILITY
+#define ASSERT_EXCLUSIVE_LOCK(...)      __attribute__((assert_capability(__VA_ARGS__)))
+#define ASSERT_SHARED_LOCK(...)         __attribute__((assert_shared_capability(__VA_ARGS__)))
+#else
 #define ASSERT_EXCLUSIVE_LOCK(...)      __attribute__((assert_exclusive_lock(__VA_ARGS__)))
 #define ASSERT_SHARED_LOCK(...)         __attribute__((assert_shared_lock(__VA_ARGS__)))
+#endif
+
 #define EXCLUSIVE_TRYLOCK_FUNCTION(...) __attribute__((exclusive_trylock_function(__VA_ARGS__)))
 #define SHARED_TRYLOCK_FUNCTION(...)    __attribute__((shared_trylock_function(__VA_ARGS__)))
 #define UNLOCK_FUNCTION(...)            __attribute__((unlock_function(__VA_ARGS__)))
@@ -1039,7 +1048,7 @@ void main() {
 namespace thread_annot_lock_61_modified {
   // Modified to fix the compiler errors
   // Test the fix for a bug introduced by the support of pass-by-reference
-  // paramters.
+  // parameters.
   struct Foo { Foo &operator<< (bool) {return *this;} };
   Foo &getFoo();
   struct Bar { Foo &func () {return getFoo();} };
@@ -1795,7 +1804,7 @@ struct TestTryLock {
     bool b = mu.TryLock();
 
     while (cond) {
-      if (b) {   // b should be uknown at this point b/c of the loop
+      if (b) {   // b should be unknown at this point b/c of the loop
         a = 10;  // expected-warning {{writing variable 'a' requires holding mutex 'mu' exclusively}}
       }
       b = !b;
@@ -1924,7 +1933,7 @@ void test() {
 
   f1.mu_.Unlock();
   bt.barTD(&f1);  // \
-    // expected-warning {{calling function 'barTD' requires holding mutex 'f1.mu_' exclusively}} \
+    // expected-warning {{calling function 'barTD<TestTemplateAttributeInstantiation::Foo1>' requires holding mutex 'f1.mu_' exclusively}} \
     // expected-note {{found near match 'bt.fooBase.mu_'}}
 
   bt.fooBase.mu_.Unlock();
@@ -2121,10 +2130,10 @@ void test() {
   myFoo.foo3(&myFoo);  // \
     // expected-warning {{calling function 'foo3' requires holding mutex 'myFoo.mu_' exclusively}}
   myFoo.fooT1(dummy);  // \
-    // expected-warning {{calling function 'fooT1' requires holding mutex 'myFoo.mu_' exclusively}}
+    // expected-warning {{calling function 'fooT1<int>' requires holding mutex 'myFoo.mu_' exclusively}}
 
   myFoo.fooT2(dummy);  // \
-    // expected-warning {{calling function 'fooT2' requires holding mutex 'myFoo.mu_' exclusively}}
+    // expected-warning {{calling function 'fooT2<int>' requires holding mutex 'myFoo.mu_' exclusively}}
 
   fooF1(&myFoo);  // \
     // expected-warning {{calling function 'fooF1' requires holding mutex 'myFoo.mu_' exclusively}}
@@ -3556,7 +3565,7 @@ void Foo::elr(Cell<T>* c1) { }
 void Foo::test() {
   Cell<int> cell;
   elr(&cell); // \
-    // expected-warning {{calling function 'elr' requires holding mutex 'cell.mu_' exclusively}}
+    // expected-warning {{calling function 'elr<int>' requires holding mutex 'cell.mu_' exclusively}}
 }
 
 
@@ -3569,7 +3578,7 @@ void globalELR(Cell<T>* c1) { }
 void globalTest() {
   Cell<int> cell;
   globalELR(&cell); // \
-    // expected-warning {{calling function 'globalELR' requires holding mutex 'cell.mu_' exclusively}}
+    // expected-warning {{calling function 'globalELR<int>' requires holding mutex 'cell.mu_' exclusively}}
 }
 
 
@@ -3590,7 +3599,7 @@ void globalELR2(Cell<T>* c4);
 void globalTest2() {
   Cell<int> cell;
   globalELR2(&cell); // \
-    // expected-warning {{calling function 'globalELR2' requires holding mutex 'cell.mu_' exclusively}}
+    // expected-warning {{calling function 'globalELR2<int>' requires holding mutex 'cell.mu_' exclusively}}
 }
 
 
@@ -3675,8 +3684,13 @@ class Foo {
                        SHARED_TRYLOCK_FUNCTION(true, mu2_);
   void assertBoth() ASSERT_EXCLUSIVE_LOCK(mu1_)
                     ASSERT_EXCLUSIVE_LOCK(mu2_);
+
+  void alsoAssertBoth() ASSERT_EXCLUSIVE_LOCK(mu1_, mu2_);
+
   void assertShared() ASSERT_SHARED_LOCK(mu1_)
                       ASSERT_SHARED_LOCK(mu2_);
+
+  void alsoAssertShared() ASSERT_SHARED_LOCK(mu1_, mu2_);
 
   void test();
   void testAssert();
@@ -3741,17 +3755,33 @@ void Foo::test() {
 
 // Force duplication of attributes
 void Foo::assertBoth() { }
+void Foo::alsoAssertBoth() { }
 void Foo::assertShared() { }
+void Foo::alsoAssertShared() { }
 
 void Foo::testAssert() {
-  assertBoth();
-  a = 0;
-  b = 0;
+  {
+    assertBoth();
+    a = 0;
+    b = 0;
+  }
+  {
+    alsoAssertBoth();
+    a = 0;
+    b = 0;
+  }
 }
 
 void Foo::testAssertShared() {
-  assertShared();
-  int zz = a + b;
+  {
+    assertShared();
+    int zz = a + b;
+  }
+
+  {
+    alsoAssertShared();
+    int zz = a + b;
+  }
 }
 
 
@@ -4398,11 +4428,11 @@ namespace pt_guard_attribute_type {
   int j PT_GUARDED_VAR;  // expected-warning {{'pt_guarded_var' only applies to pointer types; type here is 'int'}}
 
   void test() {
-    int i PT_GUARDED_BY(sls_mu);  // expected-warning {{'pt_guarded_by' attribute only applies to fields and global variables}}
-    int j PT_GUARDED_VAR;  // expected-warning {{'pt_guarded_var' attribute only applies to fields and global variables}}
+    int i PT_GUARDED_BY(sls_mu);  // expected-warning {{'pt_guarded_by' attribute only applies to non-static data members and global variables}}
+    int j PT_GUARDED_VAR;  // expected-warning {{'pt_guarded_var' attribute only applies to non-static data members and global variables}}
 
-    typedef int PT_GUARDED_BY(sls_mu) bad1;  // expected-warning {{'pt_guarded_by' attribute only applies to fields and global variables}}
-    typedef int PT_GUARDED_VAR bad2;  // expected-warning {{'pt_guarded_var' attribute only applies to fields and global variables}}
+    typedef int PT_GUARDED_BY(sls_mu) bad1;  // expected-warning {{'pt_guarded_by' attribute only applies to}}
+    typedef int PT_GUARDED_VAR bad2;  // expected-warning {{'pt_guarded_var' attribute only applies to}}
   }
 }  // end namespace pt_guard_attribute_type
 
@@ -5204,3 +5234,43 @@ class acquired_before_empty_str {
   } // expected-warning {{mutex 'lock_' is still held at the end of function}}
   Mutex lock_ ACQUIRED_BEFORE("");
 };
+
+namespace PR34800 {
+struct A {
+  operator int() const;
+};
+struct B {
+  bool g() __attribute__((locks_excluded(h))); // expected-warning {{'locks_excluded' attribute requires arguments whose type is annotated with 'capability' attribute; type here is 'int'}}
+  int h;
+};
+struct C {
+  B *operator[](int);
+};
+C c;
+void f() { c[A()]->g(); }
+} // namespace PR34800
+
+namespace ReturnScopedLockable {
+  template<typename Object> class SCOPED_LOCKABLE ReadLockedPtr {
+  public:
+    ReadLockedPtr(Object *ptr) SHARED_LOCK_FUNCTION((*this)->mutex);
+    ReadLockedPtr(ReadLockedPtr &&) SHARED_LOCK_FUNCTION((*this)->mutex);
+    ~ReadLockedPtr() UNLOCK_FUNCTION();
+
+    Object *operator->() const { return object; }
+
+  private:
+    Object *object;
+  };
+
+  struct Object {
+    int f() SHARED_LOCKS_REQUIRED(mutex);
+    Mutex mutex;
+  };
+
+  ReadLockedPtr<Object> get();
+  int use() {
+    auto ptr = get();
+    return ptr->f();
+  }
+}

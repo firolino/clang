@@ -1,4 +1,4 @@
-// RUN: %clang_cc1 -fsyntax-only -verify -fms-extensions %s
+// RUN: %clang_cc1 -fsyntax-only -verify -fms-extensions %s -Wno-deprecated-declarations
 
 typedef struct _GUID {
   unsigned long Data1;
@@ -23,7 +23,7 @@ namespace {
 // clang-cl implements the following simpler (but largely compatible) behavior
 // instead:
 // * [] and __declspec uuids have the same behavior.
-// * If there are several uuids on a a class (no matter if on the same decl or
+// * If there are several uuids on a class (no matter if on the same decl or
 //   on several decls), it is an error if they don't match.
 // * Having several uuids that match is ok.
 

@@ -777,9 +777,8 @@ public:
   
   typedef llvm::DenseMap<const CXXRecordDecl *, CharUnits> 
     VBaseOffsetOffsetsMapTy;
-  
-  typedef llvm::DenseMap<BaseSubobject, uint64_t> 
-    AddressPointsMapTy;
+
+  typedef VTableLayout::AddressPointsMapTy AddressPointsMapTy;
 
   typedef llvm::DenseMap<GlobalDecl, int64_t> MethodVTableIndicesTy;
 
@@ -817,7 +816,7 @@ private:
   /// VBaseOffsetOffsets - Contains the offsets of the virtual base offsets for
   /// the most derived class.
   VBaseOffsetOffsetsMapTy VBaseOffsetOffsets;
-  
+
   /// Components - The components of the vtable being built.
   SmallVector<VTableComponent, 64> Components;
 
@@ -982,6 +981,10 @@ private:
   }
 
 public:
+  /// Component indices of the first component of each of the vtables in the
+  /// vtable group.
+  SmallVector<size_t, 4> VTableIndices;
+
   ItaniumVTableBuilder(ItaniumVTableContext &VTables,
                        const CXXRecordDecl *MostDerivedClass,
                        CharUnits MostDerivedClassOffset,
@@ -1028,20 +1031,8 @@ public:
     return MethodVTableIndices.end();
   }
 
-  /// getNumVTableComponents - Return the number of components in the vtable
-  /// currently built.
-  uint64_t getNumVTableComponents() const {
-    return Components.size();
-  }
+  ArrayRef<VTableComponent> vtable_components() const { return Components; }
 
-  const VTableComponent *vtable_component_begin() const {
-    return Components.begin();
-  }
-  
-  const VTableComponent *vtable_component_end() const {
-    return Components.end();
-  }
-  
   AddressPointsMapTy::const_iterator address_points_begin() const {
     return AddressPoints.begin();
   }
@@ -1088,9 +1079,7 @@ static void
 visitAllOverriddenMethods(const CXXMethodDecl *MD, VisitorTy &Visitor) {
   assert(MD->isVirtual() && "Method is not virtual!");
 
-  for (CXXMethodDecl::method_iterator I = MD->begin_overridden_methods(),
-       E = MD->end_overridden_methods(); I != E; ++I) {
-    const CXXMethodDecl *OverriddenMD = *I;
+  for (const CXXMethodDecl *OverriddenMD : MD->overridden_methods()) {
     if (!Visitor(OverriddenMD))
       continue;
     visitAllOverriddenMethods(OverriddenMD, Visitor);
@@ -1338,11 +1327,8 @@ static bool OverridesIndirectMethodInBases(
     ItaniumVTableBuilder::PrimaryBasesSetVectorTy &Bases) {
   if (Bases.count(MD->getParent()))
     return true;
-  
-  for (CXXMethodDecl::method_iterator I = MD->begin_overridden_methods(),
-       E = MD->end_overridden_methods(); I != E; ++I) {
-    const CXXMethodDecl *OverriddenMD = *I;
-    
+
+  for (const CXXMethodDecl *OverriddenMD : MD->overridden_methods()) {
     // Check "indirect overriders".
     if (OverridesIndirectMethodInBases(OverriddenMD, Bases))
       return true;
@@ -1639,6 +1625,9 @@ void ItaniumVTableBuilder::LayoutPrimaryAndSecondaryVTables(
     bool BaseIsVirtualInLayoutClass, CharUnits OffsetInLayoutClass) {
   assert(Base.getBase()->isDynamicClass() && "class does not have a vtable!");
 
+  unsigned VTableIndex = Components.size();
+  VTableIndices.push_back(VTableIndex);
+
   // Add vcall and vbase offsets for this vtable.
   VCallAndVBaseOffsetBuilder Builder(MostDerivedClass, LayoutClass, &Overriders,
                                      Base, BaseIsVirtualInLayoutClass, 
@@ -1695,9 +1684,11 @@ void ItaniumVTableBuilder::LayoutPrimaryAndSecondaryVTables(
 
   // Add all address points.
   while (true) {
-    AddressPoints.insert(std::make_pair(
-      BaseSubobject(RD, OffsetInLayoutClass),
-      AddressPoint));
+    AddressPoints.insert(
+        std::make_pair(BaseSubobject(RD, OffsetInLayoutClass),
+                       VTableLayout::AddressPointLocation{
+                           unsigned(VTableIndices.size() - 1),
+                           unsigned(AddressPoint - VTableIndex)}));
 
     const ASTRecordLayout &Layout = Context.getASTRecordLayout(RD);
     const CXXRecordDecl *PrimaryBase = Layout.getPrimaryBase();
@@ -1901,7 +1892,8 @@ void ItaniumVTableBuilder::dumpLayout(raw_ostream &Out) {
   std::multimap<uint64_t, BaseSubobject> AddressPointsByIndex;
   for (const auto &AP : AddressPoints) {
     const BaseSubobject &Base = AP.first;
-    uint64_t Index = AP.second;
+    uint64_t Index =
+        VTableIndices[AP.second.VTableIndex] + AP.second.AddressPointIndex;
 
     AddressPointsByIndex.insert(std::make_pair(Index, Base));
   }
@@ -2113,8 +2105,8 @@ void ItaniumVTableBuilder::dumpLayout(raw_ostream &Out) {
       const CXXMethodDecl *MD = I.second;
 
       ThunkInfoVectorTy ThunksVector = Thunks[MD];
-      std::sort(ThunksVector.begin(), ThunksVector.end(),
-                [](const ThunkInfo &LHS, const ThunkInfo &RHS) {
+      llvm::sort(ThunksVector.begin(), ThunksVector.end(),
+                 [](const ThunkInfo &LHS, const ThunkInfo &RHS) {
         assert(LHS.Method == nullptr && RHS.Method == nullptr);
         return std::tie(LHS.This, LHS.Return) < std::tie(RHS.This, RHS.Return);
       });
@@ -2203,30 +2195,24 @@ void ItaniumVTableBuilder::dumpLayout(raw_ostream &Out) {
 }
 }
 
-VTableLayout::VTableLayout(uint64_t NumVTableComponents,
-                           const VTableComponent *VTableComponents,
-                           uint64_t NumVTableThunks,
-                           const VTableThunkTy *VTableThunks,
-                           const AddressPointsMapTy &AddressPoints,
-                           bool IsMicrosoftABI)
-  : NumVTableComponents(NumVTableComponents),
-    VTableComponents(new VTableComponent[NumVTableComponents]),
-    NumVTableThunks(NumVTableThunks),
-    VTableThunks(new VTableThunkTy[NumVTableThunks]),
-    AddressPoints(AddressPoints),
-    IsMicrosoftABI(IsMicrosoftABI) {
-  std::copy(VTableComponents, VTableComponents+NumVTableComponents,
-            this->VTableComponents.get());
-  std::copy(VTableThunks, VTableThunks+NumVTableThunks,
-            this->VTableThunks.get());
-  std::sort(this->VTableThunks.get(),
-            this->VTableThunks.get() + NumVTableThunks,
-            [](const VTableLayout::VTableThunkTy &LHS,
-               const VTableLayout::VTableThunkTy &RHS) {
-    assert((LHS.first != RHS.first || LHS.second == RHS.second) &&
-           "Different thunks should have unique indices!");
-    return LHS.first < RHS.first;
-  });
+VTableLayout::VTableLayout(ArrayRef<size_t> VTableIndices,
+                           ArrayRef<VTableComponent> VTableComponents,
+                           ArrayRef<VTableThunkTy> VTableThunks,
+                           const AddressPointsMapTy &AddressPoints)
+    : VTableComponents(VTableComponents), VTableThunks(VTableThunks),
+      AddressPoints(AddressPoints) {
+  if (VTableIndices.size() <= 1)
+    assert(VTableIndices.size() == 1 && VTableIndices[0] == 0);
+  else
+    this->VTableIndices = OwningArrayRef<size_t>(VTableIndices);
+
+  llvm::sort(this->VTableThunks.begin(), this->VTableThunks.end(),
+             [](const VTableLayout::VTableThunkTy &LHS,
+                const VTableLayout::VTableThunkTy &RHS) {
+              assert((LHS.first != RHS.first || LHS.second == RHS.second) &&
+                     "Different thunks should have unique indices!");
+              return LHS.first < RHS.first;
+            });
 }
 
 VTableLayout::~VTableLayout() { }
@@ -2284,9 +2270,8 @@ CreateVTableLayout(const ItaniumVTableBuilder &Builder) {
     VTableThunks(Builder.vtable_thunks_begin(), Builder.vtable_thunks_end());
 
   return llvm::make_unique<VTableLayout>(
-      Builder.getNumVTableComponents(), Builder.vtable_component_begin(),
-      VTableThunks.size(), VTableThunks.data(), Builder.getAddressPoints(),
-      /*IsMicrosoftABI=*/false);
+      Builder.VTableIndices, Builder.vtable_components(), VTableThunks,
+      Builder.getAddressPoints());
 }
 
 void
@@ -2382,8 +2367,6 @@ namespace {
 
 class VFTableBuilder {
 public:
-  typedef MicrosoftVTableContext::MethodVFTableLocation MethodVFTableLocation;
-
   typedef llvm::DenseMap<GlobalDecl, MethodVFTableLocation>
     MethodVFTableLocationsTy;
 
@@ -2568,15 +2551,7 @@ public:
                                   MethodVFTableLocations.end());
   }
 
-  uint64_t getNumVTableComponents() const { return Components.size(); }
-
-  const VTableComponent *vtable_component_begin() const {
-    return Components.begin();
-  }
-
-  const VTableComponent *vtable_component_end() const {
-    return Components.end();
-  }
+  ArrayRef<VTableComponent> vtable_components() const { return Components; }
 
   VTableThunksMapTy::const_iterator vtable_thunks_begin() const {
     return VTableThunks.begin();
@@ -2981,6 +2956,9 @@ void VFTableBuilder::AddMethods(BaseSubobject Base, unsigned BaseDepth,
       CalculateVtordispAdjustment(FinalOverrider, ThisOffset,
                                   ThisAdjustmentOffset);
 
+    unsigned VBIndex =
+        LastVBase ? VTables.getVBTableIndex(MostDerivedClass, LastVBase) : 0;
+
     if (OverriddenMD) {
       // If MD overrides anything in this vftable, we need to update the
       // entries.
@@ -2992,6 +2970,8 @@ void VFTableBuilder::AddMethods(BaseSubobject Base, unsigned BaseDepth,
         continue;
 
       MethodInfo &OverriddenMethodInfo = OverriddenMDIterator->second;
+
+      VBIndex = OverriddenMethodInfo.VBTableIndex;
 
       // Let's check if the overrider requires any return adjustments.
       // We must create a new slot if the MD's return type is not trivially
@@ -3005,8 +2985,7 @@ void VFTableBuilder::AddMethods(BaseSubobject Base, unsigned BaseDepth,
       if (!ReturnAdjustingThunk) {
         // No return adjustment needed - just replace the overridden method info
         // with the current info.
-        MethodInfo MI(OverriddenMethodInfo.VBTableIndex,
-                      OverriddenMethodInfo.VFTableIndex);
+        MethodInfo MI(VBIndex, OverriddenMethodInfo.VFTableIndex);
         MethodInfoMap.erase(OverriddenMDIterator);
 
         assert(!MethodInfoMap.count(MD) &&
@@ -3016,7 +2995,7 @@ void VFTableBuilder::AddMethods(BaseSubobject Base, unsigned BaseDepth,
       }
 
       // In case we need a return adjustment, we'll add a new slot for
-      // the overrider. Mark the overriden method as shadowed by the new slot.
+      // the overrider. Mark the overridden method as shadowed by the new slot.
       OverriddenMethodInfo.Shadowed = true;
 
       // Force a special name mangling for a return-adjusting thunk
@@ -3033,8 +3012,6 @@ void VFTableBuilder::AddMethods(BaseSubobject Base, unsigned BaseDepth,
 
     // If we got here, MD is a method not seen in any of the sub-bases or
     // it requires return adjustment. Insert the method info for this method.
-    unsigned VBIndex =
-        LastVBase ? VTables.getVBTableIndex(MostDerivedClass, LastVBase) : 0;
     MethodInfo MI(VBIndex,
                   HasRTTIComponent ? Components.size() - 1 : Components.size(),
                   ReturnAdjustingThunk);
@@ -3365,8 +3342,8 @@ static bool rebucketPaths(VPtrInfoVector &Paths) {
   PathsSorted.reserve(Paths.size());
   for (auto& P : Paths)
     PathsSorted.push_back(*P);
-  std::sort(PathsSorted.begin(), PathsSorted.end(),
-            [](const VPtrInfo &LHS, const VPtrInfo &RHS) {
+  llvm::sort(PathsSorted.begin(), PathsSorted.end(),
+             [](const VPtrInfo &LHS, const VPtrInfo &RHS) {
     return LHS.MangledPath < RHS.MangledPath;
   });
   bool Changed = false;
@@ -3565,6 +3542,18 @@ static void computeFullPathsForVFTables(ASTContext &Context,
   }
 }
 
+static bool vfptrIsEarlierInMDC(const ASTRecordLayout &Layout,
+                                const MethodVFTableLocation &LHS,
+                                const MethodVFTableLocation &RHS) {
+  CharUnits L = LHS.VFPtrOffset;
+  CharUnits R = RHS.VFPtrOffset;
+  if (LHS.VBase)
+    L += Layout.getVBaseClassOffset(LHS.VBase);
+  if (RHS.VBase)
+    R += Layout.getVBaseClassOffset(RHS.VBase);
+  return L < R;
+}
+
 void MicrosoftVTableContext::computeVTableRelatedInformation(
     const CXXRecordDecl *RD) {
   assert(RD->isDynamicClass());
@@ -3576,14 +3565,14 @@ void MicrosoftVTableContext::computeVTableRelatedInformation(
   const VTableLayout::AddressPointsMapTy EmptyAddressPointsMap;
 
   {
-    VPtrInfoVector VFPtrs;
-    computeVTablePaths(/*ForVBTables=*/false, RD, VFPtrs);
-    computeFullPathsForVFTables(Context, RD, VFPtrs);
+    auto VFPtrs = llvm::make_unique<VPtrInfoVector>();
+    computeVTablePaths(/*ForVBTables=*/false, RD, *VFPtrs);
+    computeFullPathsForVFTables(Context, RD, *VFPtrs);
     VFPtrLocations[RD] = std::move(VFPtrs);
   }
 
   MethodVFTableLocationsTy NewMethodLocations;
-  for (const std::unique_ptr<VPtrInfo> &VFPtr : VFPtrLocations[RD]) {
+  for (const std::unique_ptr<VPtrInfo> &VFPtr : *VFPtrLocations[RD]) {
     VFTableBuilder Builder(*this, RD, *VFPtr);
 
     VFTableIdTy id(RD, VFPtr->FullOffsetInMDC);
@@ -3591,16 +3580,19 @@ void MicrosoftVTableContext::computeVTableRelatedInformation(
     SmallVector<VTableLayout::VTableThunkTy, 1> VTableThunks(
         Builder.vtable_thunks_begin(), Builder.vtable_thunks_end());
     VFTableLayouts[id] = llvm::make_unique<VTableLayout>(
-        Builder.getNumVTableComponents(), Builder.vtable_component_begin(),
-        VTableThunks.size(), VTableThunks.data(), EmptyAddressPointsMap, true);
+        ArrayRef<size_t>{0}, Builder.vtable_components(), VTableThunks,
+        EmptyAddressPointsMap);
     Thunks.insert(Builder.thunks_begin(), Builder.thunks_end());
 
+    const ASTRecordLayout &Layout = Context.getASTRecordLayout(RD);
     for (const auto &Loc : Builder.vtable_locations()) {
-      GlobalDecl GD = Loc.first;
-      MethodVFTableLocation NewLoc = Loc.second;
-      auto M = NewMethodLocations.find(GD);
-      if (M == NewMethodLocations.end() || NewLoc < M->second)
-        NewMethodLocations[GD] = NewLoc;
+      auto Insert = NewMethodLocations.insert(Loc);
+      if (!Insert.second) {
+        const MethodVFTableLocation &NewLoc = Loc.second;
+        MethodVFTableLocation &OldLoc = Insert.first->second;
+        if (vfptrIsEarlierInMDC(Layout, NewLoc, OldLoc))
+          OldLoc = NewLoc;
+      }
     }
   }
 
@@ -3725,7 +3717,7 @@ MicrosoftVTableContext::getVFPtrOffsets(const CXXRecordDecl *RD) {
   computeVTableRelatedInformation(RD);
 
   assert(VFPtrLocations.count(RD) && "Couldn't find vfptr locations");
-  return VFPtrLocations[RD];
+  return *VFPtrLocations[RD];
 }
 
 const VTableLayout &
@@ -3738,7 +3730,7 @@ MicrosoftVTableContext::getVFTableLayout(const CXXRecordDecl *RD,
   return *VFTableLayouts[id];
 }
 
-const MicrosoftVTableContext::MethodVFTableLocation &
+MethodVFTableLocation
 MicrosoftVTableContext::getMethodVFTableLocation(GlobalDecl GD) {
   assert(cast<CXXMethodDecl>(GD.getDecl())->isVirtual() &&
          "Only use this method for virtual methods or dtors");

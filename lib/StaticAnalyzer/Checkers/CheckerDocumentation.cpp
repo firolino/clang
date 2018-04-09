@@ -42,6 +42,7 @@ class CheckerDocumentation : public Checker< check::PreStmt<ReturnStmt>,
                                        check::PreCall,
                                        check::PostCall,
                                        check::BranchCondition,
+                                       check::NewAllocator,
                                        check::Location,
                                        check::Bind,
                                        check::DeadSymbols,
@@ -125,6 +126,22 @@ public:
 
   /// \brief Pre-visit of the condition statement of a branch (such as IfStmt).
   void checkBranchCondition(const Stmt *Condition, CheckerContext &Ctx) const {}
+
+  /// \brief Post-visit the C++ operator new's allocation call.
+  ///
+  /// Execution of C++ operator new consists of the following phases: (1) call
+  /// default or overridden operator new() to allocate memory (2) cast the
+  /// return value of operator new() from void pointer type to class pointer
+  /// type, (3) assuming that the value is non-null, call the object's
+  /// constructor over this pointer, (4) declare that the value of the
+  /// new-expression is this pointer. This callback is called between steps
+  /// (2) and (3). Post-call for the allocator is called after step (1).
+  /// Pre-statement for the new-expression is called on step (4) when the value
+  /// of the expression is evaluated.
+  /// \param NE     The C++ new-expression that triggered the allocation.
+  /// \param Target The allocated region, casted to the class type.
+  void checkNewAllocator(const CXXNewExpr *NE, SVal Target,
+                         CheckerContext &) const {}
 
   /// \brief Called on a load from and a store to a location.
   ///
@@ -231,14 +248,6 @@ public:
   /// check::LiveSymbols
   void checkLiveSymbols(ProgramStateRef State, SymbolReaper &SR) const {}
 
-  /// \brief Called to determine if the checker currently needs to know if when
-  /// contents of any regions change.
-  ///
-  /// Since it is not necessarily cheap to compute which regions are being
-  /// changed, this allows the analyzer core to skip the more expensive
-  /// #checkRegionChanges when no checkers are tracking any state.
-  bool wantsRegionChangeUpdate(ProgramStateRef St) const { return true; }
-
   /// \brief Called when the contents of one or more regions change.
   ///
   /// This can occur in many different ways: an explicit bind, a blanket
@@ -255,11 +264,10 @@ public:
   ///        by this change. For a simple bind, this list will be the same as
   ///        \p ExplicitRegions, since a bind does not affect the contents of
   ///        anything accessible through the base region.
+  /// \param LCtx LocationContext that is useful for getting various contextual
+  ///        info, like callstack, CFG etc.
   /// \param Call The opaque call triggering this invalidation. Will be 0 if the
   ///        change was not triggered by a call.
-  ///
-  /// Note that this callback will not be invoked unless
-  /// #wantsRegionChangeUpdate returns \c true.
   ///
   /// check::RegionChanges
   ProgramStateRef
@@ -267,6 +275,7 @@ public:
                        const InvalidatedSymbols *Invalidated,
                        ArrayRef<const MemRegion *> ExplicitRegions,
                        ArrayRef<const MemRegion *> Regions,
+                       const LocationContext *LCtx,
                        const CallEvent *Call) const {
     return State;
   }

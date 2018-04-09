@@ -154,6 +154,10 @@ static ScopePair GetDiagForGotoScopeDecl(Sema &S, const Decl *D) {
         return ScopePair(diag::note_protected_by_objc_weak_init,
                          diag::note_exits_objc_weak);
 
+      case QualType::DK_nontrivial_c_struct:
+        return ScopePair(diag::note_protected_by_non_trivial_c_struct_init,
+                         diag::note_exits_dtor);
+
       case QualType::DK_cxx_destructor:
         OutDiag = diag::note_exits_dtor;
         break;
@@ -254,6 +258,10 @@ void JumpScopeChecker::BuildScopeInformation(VarDecl *D,
         Diags = ScopePair(diag::note_enters_block_captures_weak,
                           diag::note_exits_block_captures_weak);
         break;
+      case QualType::DK_nontrivial_c_struct:
+        Diags = ScopePair(diag::note_enters_block_captures_non_trivial_c_struct,
+                          diag::note_exits_block_captures_non_trivial_c_struct);
+        break;
       case QualType::DK_none:
         llvm_unreachable("non-lifetime captured variable");
     }
@@ -287,6 +295,15 @@ void JumpScopeChecker::BuildScopeInformation(Stmt *S,
     IndirectJumpTargets.push_back(cast<AddrLabelExpr>(S)->getLabel());
     break;
 
+  case Stmt::ObjCForCollectionStmtClass: {
+    auto *CS = cast<ObjCForCollectionStmt>(S);
+    unsigned Diag = diag::note_protected_by_objc_fast_enumeration;
+    unsigned NewParentScope = Scopes.size();
+    Scopes.push_back(GotoScope(ParentScope, Diag, 0, S->getLocStart()));
+    BuildScopeInformation(CS->getBody(), NewParentScope);
+    return;
+  }
+
   case Stmt::IndirectGotoStmtClass:
     // "goto *&&lbl;" is a special case which we treat as equivalent
     // to a normal goto.  In addition, we don't calculate scope in the
@@ -314,7 +331,7 @@ void JumpScopeChecker::BuildScopeInformation(Stmt *S,
       BuildScopeInformation(Var, ParentScope);
       ++StmtsToSkip;
     }
-    // Fall through
+    LLVM_FALLTHROUGH;
 
   case Stmt::GotoStmtClass:
     // Remember both what scope a goto is in as well as the fact that we have
@@ -550,10 +567,8 @@ void JumpScopeChecker::BuildScopeInformation(Stmt *S,
     // order to avoid blowing out the stack.
     while (true) {
       Stmt *Next;
-      if (CaseStmt *CS = dyn_cast<CaseStmt>(SubStmt))
-        Next = CS->getSubStmt();
-      else if (DefaultStmt *DS = dyn_cast<DefaultStmt>(SubStmt))
-        Next = DS->getSubStmt();
+      if (SwitchCase *SC = dyn_cast<SwitchCase>(SubStmt))
+        Next = SC->getSubStmt();
       else if (LabelStmt *LS = dyn_cast<LabelStmt>(SubStmt))
         Next = LS->getSubStmt();
       else

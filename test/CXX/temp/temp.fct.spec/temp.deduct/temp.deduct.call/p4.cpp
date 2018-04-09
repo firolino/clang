@@ -30,16 +30,27 @@ namespace noexcept_conversion {
     bar(&f);
   }
   // There is no corresponding rule for references.
-  // FIXME: This seems like a defect.
-  template<typename R> void baz(R(&)()); // expected-note {{does not match adjusted type}}
+  // We consider this to be a defect, and allow deduction to succeed in this
+  // case. FIXME: Check this should be accepted once the DR is resolved.
+  template<typename R> void baz(R(&)());
   void g() {
-    baz(f); // expected-error {{no match}}
+    baz(f);
   }
+
+  // But there is one for member pointers.
+  template<typename R, typename C, typename ...A> void quux(R (C::*)(A...));
+  struct Q { void f(int, char) noexcept { quux(&Q::f); } };
 
   void g1() noexcept;
   void g2();
   template <class T> int h(T *, T *); // expected-note {{deduced conflicting types for parameter 'T' ('void () noexcept' vs. 'void ()')}}
   int x = h(g1, g2); // expected-error {{no matching function}}
+
+  // We consider it a defect that deduction does not support the following.
+  // FIXME: Check that the defect is resolved as we expect.
+  template<bool B> int i(void () noexcept(B));
+  int i1 = i(g1);
+  int i2 = i(g2);
 }
 #else
 // expected-no-diagnostics

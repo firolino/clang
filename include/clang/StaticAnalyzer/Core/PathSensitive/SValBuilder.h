@@ -16,21 +16,43 @@
 #define LLVM_CLANG_STATICANALYZER_CORE_PATHSENSITIVE_SVALBUILDER_H
 
 #include "clang/AST/ASTContext.h"
+#include "clang/AST/DeclarationName.h"
 #include "clang/AST/Expr.h"
 #include "clang/AST/ExprObjC.h"
+#include "clang/AST/Type.h"
+#include "clang/Basic/LLVM.h"
+#include "clang/Basic/LangOptions.h"
 #include "clang/StaticAnalyzer/Core/PathSensitive/BasicValueFactory.h"
 #include "clang/StaticAnalyzer/Core/PathSensitive/MemRegion.h"
+#include "clang/StaticAnalyzer/Core/PathSensitive/ProgramState_Fwd.h"
 #include "clang/StaticAnalyzer/Core/PathSensitive/SVals.h"
+#include "clang/StaticAnalyzer/Core/PathSensitive/SymExpr.h"
 #include "clang/StaticAnalyzer/Core/PathSensitive/SymbolManager.h"
+#include "llvm/ADT/ImmutableList.h"
+#include "llvm/ADT/Optional.h"
+#include <cstdint>
 
 namespace clang {
 
+class BlockDecl;
 class CXXBoolLiteralExpr;
+class CXXMethodDecl;
+class CXXRecordDecl;
+class DeclaratorDecl;
+class FunctionDecl;
+class LocationContext;
+class StackFrameContext;
+class Stmt;
 
 namespace ento {
 
+class ConditionTruthVal;
+class ProgramStateManager;
+class StoreRef;
+
 class SValBuilder {
   virtual void anchor();
+
 protected:
   ASTContext &Context;
   
@@ -62,14 +84,12 @@ public:
 public:
   SValBuilder(llvm::BumpPtrAllocator &alloc, ASTContext &context,
               ProgramStateManager &stateMgr)
-    : Context(context), BasicVals(context, alloc),
-      SymMgr(context, BasicVals, alloc),
-      MemMgr(context, alloc),
-      StateMgr(stateMgr),
-      ArrayIndexTy(context.LongLongTy),
-      ArrayIndexWidth(context.getTypeSize(ArrayIndexTy)) {}
+      : Context(context), BasicVals(context, alloc),
+        SymMgr(context, BasicVals, alloc), MemMgr(context, alloc),
+        StateMgr(stateMgr), ArrayIndexTy(context.LongLongTy),
+        ArrayIndexWidth(context.getTypeSize(ArrayIndexTy)) {}
 
-  virtual ~SValBuilder() {}
+  virtual ~SValBuilder() = default;
 
   bool haveSameType(const SymExpr *Sym1, const SymExpr *Sym2) {
     return haveSameType(Sym1->getType(), Sym2->getType());
@@ -112,6 +132,11 @@ public:
   /// Evaluates a given SVal. If the SVal has only one possible (integer) value,
   /// that value is returned. Otherwise, returns NULL.
   virtual const llvm::APSInt *getKnownValue(ProgramStateRef state, SVal val) = 0;
+
+  /// Simplify symbolic expressions within a given SVal. Return an SVal
+  /// that represents the same value, but is hopefully easier to work with
+  /// than the original SVal.
+  virtual SVal simplifySVal(ProgramStateRef State, SVal Val) = 0;
   
   /// Constructs a symbolic expression for two non-location values.
   SVal makeSymExprValNN(ProgramStateRef state, BinaryOperator::Opcode op,
@@ -119,7 +144,12 @@ public:
 
   SVal evalBinOp(ProgramStateRef state, BinaryOperator::Opcode op,
                  SVal lhs, SVal rhs, QualType type);
-  
+
+  /// \return Whether values in \p lhs and \p rhs are equal at \p state.
+  ConditionTruthVal areEqual(ProgramStateRef state, SVal lhs, SVal rhs);
+
+  SVal evalEQ(ProgramStateRef state, SVal lhs, SVal rhs);
+
   DefinedOrUnknownSVal evalEQ(ProgramStateRef state, DefinedOrUnknownSVal lhs,
                               DefinedOrUnknownSVal rhs);
 
@@ -183,11 +213,11 @@ public:
                                         const LocationContext *LCtx,
                                         QualType type,
                                         unsigned count);
-  
   DefinedOrUnknownSVal conjureSymbolVal(const Stmt *stmt,
                                         const LocationContext *LCtx,
                                         QualType type,
                                         unsigned visitCount);
+
   /// \brief Conjure a symbol representing heap allocated memory region.
   ///
   /// Note, the expression should represent a location.
@@ -203,6 +233,8 @@ public:
                                    const Expr *expr, QualType type,
                                    const LocationContext *LCtx,
                                    unsigned count);
+
+  DefinedSVal getMemberPointer(const DeclaratorDecl *DD);
 
   DefinedSVal getFunctionPointer(const FunctionDecl *func);
   
@@ -224,6 +256,14 @@ public:
                              const TypedValueRegion *region) {
     return nonloc::LazyCompoundVal(
         BasicVals.getLazyCompoundValData(store, region));
+  }
+
+  NonLoc makePointerToMember(const DeclaratorDecl *DD) {
+    return nonloc::PointerToMember(DD);
+  }
+
+  NonLoc makePointerToMember(const PointerToMemberData *PTMD) {
+    return nonloc::PointerToMember(PTMD);
   }
 
   NonLoc makeZeroArrayIndex() {
@@ -300,6 +340,13 @@ public:
     return nonloc::ConcreteInt(BasicVals.getTruthValue(b));
   }
 
+  /// Create NULL pointer, with proper pointer bit-width for given address
+  /// space.
+  /// \param type pointer type.
+  Loc makeNullWithType(QualType type) {
+    return loc::ConcreteInt(BasicVals.getZeroWithTypeSize(type));
+  }
+
   Loc makeNull() {
     return loc::ConcreteInt(BasicVals.getZeroWithPtrWidth());
   }
@@ -333,8 +380,8 @@ SValBuilder* createSimpleSValBuilder(llvm::BumpPtrAllocator &alloc,
                                      ASTContext &context,
                                      ProgramStateManager &stateMgr);
 
-} // end GR namespace
+} // namespace ento
 
-} // end clang namespace
+} // namespace clang
 
-#endif
+#endif // LLVM_CLANG_STATICANALYZER_CORE_PATHSENSITIVE_SVALBUILDER_H

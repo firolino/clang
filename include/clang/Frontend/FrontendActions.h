@@ -80,14 +80,23 @@ protected:
 
   bool hasASTFileSupport() const override { return false; }
 
+  bool shouldEraseOutputFiles() override;
+
 public:
   /// \brief Compute the AST consumer arguments that will be used to
   /// create the PCHGenerator instance returned by CreateASTConsumer.
   ///
-  /// \returns true if an error occurred, false otherwise.
-  static std::unique_ptr<raw_pwrite_stream>
-  ComputeASTConsumerArguments(CompilerInstance &CI, StringRef InFile,
-                              std::string &Sysroot, std::string &OutputFile);
+  /// \returns false if an error occurred, true otherwise.
+  static bool ComputeASTConsumerArguments(CompilerInstance &CI,
+                                          std::string &Sysroot);
+
+  /// \brief Creates file to write the PCH into and returns a stream to write it
+  /// into. On error, returns null.
+  static std::unique_ptr<llvm::raw_pwrite_stream>
+  CreateOutputFile(CompilerInstance &CI, StringRef InFile,
+                   std::string &OutputFile);
+
+  bool BeginSourceFileAction(CompilerInstance &CI) override;
 };
 
 class GenerateModuleAction : public ASTFrontendAction {
@@ -95,8 +104,6 @@ class GenerateModuleAction : public ASTFrontendAction {
   CreateOutputFile(CompilerInstance &CI, StringRef InFile) = 0;
 
 protected:
-  bool BeginSourceFileAction(CompilerInstance &CI, StringRef Filename) override;
-
   std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance &CI,
                                                  StringRef InFile) override;
 
@@ -108,25 +115,16 @@ protected:
 };
 
 class GenerateModuleFromModuleMapAction : public GenerateModuleAction {
-  clang::Module *Module = nullptr;
-  const FileEntry *ModuleMapForUniquing = nullptr;
-  bool IsSystem = false;
-
 private:
-  bool BeginSourceFileAction(CompilerInstance &CI, StringRef Filename) override;
+  bool BeginSourceFileAction(CompilerInstance &CI) override;
 
   std::unique_ptr<raw_pwrite_stream>
   CreateOutputFile(CompilerInstance &CI, StringRef InFile) override;
-
-public:
-  GenerateModuleFromModuleMapAction() {}
-  GenerateModuleFromModuleMapAction(const FileEntry *ModuleMap, bool IsSystem)
-      : ModuleMapForUniquing(ModuleMap), IsSystem(IsSystem) {}
 };
 
 class GenerateModuleInterfaceAction : public GenerateModuleAction {
 private:
-  bool BeginSourceFileAction(CompilerInstance &CI, StringRef Filename) override;
+  bool BeginSourceFileAction(CompilerInstance &CI) override;
 
   std::unique_ptr<raw_pwrite_stream>
   CreateOutputFile(CompilerInstance &CI, StringRef InFile) override;
@@ -169,6 +167,14 @@ public:
   bool hasCodeCompletionSupport() const override { return false; }
 };
 
+class TemplightDumpAction : public ASTFrontendAction {
+protected:
+  std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance &CI,
+                                                 StringRef InFile) override;
+
+  void ExecuteAction() override;
+};
+
 /**
  * \brief Frontend action adaptor that merges ASTs together.
  *
@@ -188,8 +194,7 @@ protected:
   std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance &CI,
                                                  StringRef InFile) override;
 
-  bool BeginSourceFileAction(CompilerInstance &CI,
-                             StringRef Filename) override;
+  bool BeginSourceFileAction(CompilerInstance &CI) override;
 
   void ExecuteAction() override;
   void EndSourceFileAction() override;

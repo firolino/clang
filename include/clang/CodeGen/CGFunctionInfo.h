@@ -95,6 +95,7 @@ private:
   bool SRetAfterThis : 1;   // isIndirect()
   bool InReg : 1;           // isDirect() || isExtend() || isIndirect()
   bool CanBeFlattened: 1;   // isDirect()
+  bool SignExt : 1;         // isExtend()
 
   bool canHavePaddingType() const {
     return isDirect() || isExtend() || isIndirect() || isExpand();
@@ -133,15 +134,38 @@ public:
     AI.setInReg(true);
     return AI;
   }
-  static ABIArgInfo getExtend(llvm::Type *T = nullptr) {
+
+  static ABIArgInfo getSignExtend(QualType Ty, llvm::Type *T = nullptr) {
+    assert(Ty->isIntegralOrEnumerationType() && "Unexpected QualType");
     auto AI = ABIArgInfo(Extend);
     AI.setCoerceToType(T);
     AI.setPaddingType(nullptr);
     AI.setDirectOffset(0);
+    AI.setSignExt(true);
     return AI;
   }
-  static ABIArgInfo getExtendInReg(llvm::Type *T = nullptr) {
-    auto AI = getExtend(T);
+
+  static ABIArgInfo getZeroExtend(QualType Ty, llvm::Type *T = nullptr) {
+    assert(Ty->isIntegralOrEnumerationType() && "Unexpected QualType");
+    auto AI = ABIArgInfo(Extend);
+    AI.setCoerceToType(T);
+    AI.setPaddingType(nullptr);
+    AI.setDirectOffset(0);
+    AI.setSignExt(false);
+    return AI;
+  }
+
+  // ABIArgInfo will record the argument as being extended based on the sign
+  // of its type.
+  static ABIArgInfo getExtend(QualType Ty, llvm::Type *T = nullptr) {
+    assert(Ty->isIntegralOrEnumerationType() && "Unexpected QualType");
+    if (Ty->hasSignedIntegerRepresentation())
+      return getSignExtend(Ty, T);
+    return getZeroExtend(Ty, T);
+  }
+
+  static ABIArgInfo getExtendInReg(QualType Ty, llvm::Type *T = nullptr) {
+    auto AI = getExtend(Ty, T);
     AI.setInReg(true);
     return AI;
   }
@@ -252,6 +276,15 @@ public:
   void setDirectOffset(unsigned Offset) {
     assert((isDirect() || isExtend()) && "Not a direct or extend kind");
     DirectOffset = Offset;
+  }
+
+  bool isSignExt() const {
+    assert(isExtend() && "Invalid kind!");
+    return SignExt;
+  }
+  void setSignExt(bool SExt) {
+    assert(isExtend() && "Invalid kind!");
+    SignExt = SExt;
   }
 
   llvm::Type *getPaddingType() const {
@@ -461,7 +494,7 @@ class CGFunctionInfo final
   unsigned EffectiveCallingConvention : 8;
 
   /// The clang::CallingConv that this was originally created with.
-  unsigned ASTCallingConvention : 8;
+  unsigned ASTCallingConvention : 6;
 
   /// Whether this is an instance method.
   unsigned InstanceMethod : 1;
@@ -475,9 +508,15 @@ class CGFunctionInfo final
   /// Whether this function is returns-retained.
   unsigned ReturnsRetained : 1;
 
+  /// Whether this function saved caller registers.
+  unsigned NoCallerSavedRegs : 1;
+
   /// How many arguments to pass inreg.
   unsigned HasRegParm : 1;
   unsigned RegParm : 3;
+
+  /// Whether this function has nocf_check attribute.
+  unsigned NoCfCheck : 1;
 
   RequiredArgs Required;
 
@@ -560,6 +599,12 @@ public:
   /// is not always reliable for call sites.
   bool isReturnsRetained() const { return ReturnsRetained; }
 
+  /// Whether this function no longer saves caller registers.
+  bool isNoCallerSavedRegs() const { return NoCallerSavedRegs; }
+
+  /// Whether this function has nocf_check attribute.
+  bool isNoCfCheck() const { return NoCfCheck; }
+
   /// getASTCallingConvention() - Return the AST-specified calling
   /// convention.
   CallingConv getASTCallingConvention() const {
@@ -583,10 +628,9 @@ public:
   unsigned getRegParm() const { return RegParm; }
 
   FunctionType::ExtInfo getExtInfo() const {
-    return FunctionType::ExtInfo(isNoReturn(),
-                                 getHasRegParm(), getRegParm(),
-                                 getASTCallingConvention(),
-                                 isReturnsRetained());
+    return FunctionType::ExtInfo(isNoReturn(), getHasRegParm(), getRegParm(),
+                                 getASTCallingConvention(), isReturnsRetained(),
+                                 isNoCallerSavedRegs(), isNoCfCheck());
   }
 
   CanQualType getReturnType() const { return getArgsBuffer()[0].type; }
@@ -623,8 +667,10 @@ public:
     ID.AddBoolean(ChainCall);
     ID.AddBoolean(NoReturn);
     ID.AddBoolean(ReturnsRetained);
+    ID.AddBoolean(NoCallerSavedRegs);
     ID.AddBoolean(HasRegParm);
     ID.AddInteger(RegParm);
+    ID.AddBoolean(NoCfCheck);
     ID.AddInteger(Required.getOpaqueData());
     ID.AddBoolean(HasExtParameterInfos);
     if (HasExtParameterInfos) {
@@ -648,8 +694,10 @@ public:
     ID.AddBoolean(ChainCall);
     ID.AddBoolean(info.getNoReturn());
     ID.AddBoolean(info.getProducesResult());
+    ID.AddBoolean(info.getNoCallerSavedRegs());
     ID.AddBoolean(info.getHasRegParm());
     ID.AddInteger(info.getRegParm());
+    ID.AddBoolean(info.getNoCfCheck());
     ID.AddInteger(required.getOpaqueData());
     ID.AddBoolean(!paramInfos.empty());
     if (!paramInfos.empty()) {
@@ -662,29 +710,6 @@ public:
       i->Profile(ID);
     }
   }
-};
-
-/// CGCalleeInfo - Class to encapsulate the information about a callee to be
-/// used during the generation of call/invoke instructions.
-class CGCalleeInfo {
-  /// \brief The function proto type of the callee.
-  const FunctionProtoType *CalleeProtoTy;
-  /// \brief The function declaration of the callee.
-  const Decl *CalleeDecl;
-
-public:
-  explicit CGCalleeInfo() : CalleeProtoTy(nullptr), CalleeDecl(nullptr) {}
-  CGCalleeInfo(const FunctionProtoType *calleeProtoTy, const Decl *calleeDecl)
-      : CalleeProtoTy(calleeProtoTy), CalleeDecl(calleeDecl) {}
-  CGCalleeInfo(const FunctionProtoType *calleeProtoTy)
-      : CalleeProtoTy(calleeProtoTy), CalleeDecl(nullptr) {}
-  CGCalleeInfo(const Decl *calleeDecl)
-      : CalleeProtoTy(nullptr), CalleeDecl(calleeDecl) {}
-
-  const FunctionProtoType *getCalleeFunctionProtoType() {
-    return CalleeProtoTy;
-  }
-  const Decl *getCalleeDecl() { return CalleeDecl; }
 };
 
 }  // end namespace CodeGen

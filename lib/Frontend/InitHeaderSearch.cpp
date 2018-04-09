@@ -213,14 +213,15 @@ void InitHeaderSearch::AddDefaultCIncludePaths(const llvm::Triple &triple,
     case llvm::Triple::FreeBSD:
     case llvm::Triple::NetBSD:
     case llvm::Triple::OpenBSD:
-    case llvm::Triple::Bitrig:
     case llvm::Triple::NaCl:
     case llvm::Triple::PS4:
     case llvm::Triple::ELFIAMCU:
+    case llvm::Triple::Fuchsia:
       break;
     case llvm::Triple::Win32:
       if (triple.getEnvironment() != llvm::Triple::Cygnus)
         break;
+      LLVM_FALLTHROUGH;
     default:
       // FIXME: temporary hack: hard-coded paths.
       AddPath("/usr/local/include", System, false);
@@ -255,6 +256,7 @@ void InitHeaderSearch::AddDefaultCIncludePaths(const llvm::Triple &triple,
 
   switch (os) {
   case llvm::Triple::Linux:
+  case llvm::Triple::Solaris:
     llvm_unreachable("Include management is handled in the driver.");
 
   case llvm::Triple::CloudABI: {
@@ -321,6 +323,7 @@ void InitHeaderSearch::AddDefaultCIncludePaths(const llvm::Triple &triple,
   case llvm::Triple::RTEMS:
   case llvm::Triple::NaCl:
   case llvm::Triple::ELFIAMCU:
+  case llvm::Triple::Fuchsia:
     break;
   case llvm::Triple::PS4: {
     // <isysroot> gets prepended later in AddPath().
@@ -343,6 +346,7 @@ void InitHeaderSearch::AddDefaultCIncludePaths(const llvm::Triple &triple,
     AddPath(BaseSDKPath + "/target/include", System, false);
     if (triple.isPS4CPU())
       AddPath(BaseSDKPath + "/target/include_common", System, false);
+    LLVM_FALLTHROUGH;
   }
   default:
     AddPath("/usr/include", ExternCSystem, false);
@@ -395,6 +399,7 @@ AddDefaultCPlusPlusIncludePaths(const llvm::Triple &triple, const HeaderSearchOp
 
   switch (os) {
   case llvm::Triple::Linux:
+  case llvm::Triple::Solaris:
     llvm_unreachable("Include management is handled in the driver.");
     break;
   case llvm::Triple::Win32:
@@ -442,6 +447,7 @@ void InitHeaderSearch::AddDefaultIncludePaths(const LangOptions &Lang,
     break; // Everything else continues to use this routine's logic.
 
   case llvm::Triple::Linux:
+  case llvm::Triple::Solaris:
     return;
 
   case llvm::Triple::Win32:
@@ -526,7 +532,7 @@ static unsigned RemoveDuplicates(std::vector<DirectoryLookup> &SearchList,
     if (CurEntry.getDirCharacteristic() != SrcMgr::C_User) {
       // Find the dir that this is the same of.
       unsigned FirstDir;
-      for (FirstDir = 0; ; ++FirstDir) {
+      for (FirstDir = First;; ++FirstDir) {
         assert(FirstDir != i && "Didn't find dupe?");
 
         const DirectoryLookup &SearchEntry = SearchList[FirstDir];

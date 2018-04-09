@@ -1,4 +1,4 @@
-//===--- JSONCompilationDatabase.h - ----------------------------*- C++ -*-===//
+//===- JSONCompilationDatabase.h --------------------------------*- C++ -*-===//
 //
 //                     The LLVM Compiler Infrastructure
 //
@@ -18,6 +18,7 @@
 #include "clang/Basic/LLVM.h"
 #include "clang/Tooling/CompilationDatabase.h"
 #include "clang/Tooling/FileMatchTrie.h"
+#include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/StringMap.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/MemoryBuffer.h"
@@ -25,6 +26,8 @@
 #include "llvm/Support/YAMLParser.h"
 #include <memory>
 #include <string>
+#include <tuple>
+#include <utility>
 #include <vector>
 
 namespace clang {
@@ -73,7 +76,7 @@ public:
   loadFromBuffer(StringRef DatabaseString, std::string &ErrorMessage,
                  JSONCommandLineSyntax Syntax);
 
-  /// \brief Returns all compile comamnds in which the specified file was
+  /// \brief Returns all compile commands in which the specified file was
   /// compiled.
   ///
   /// FIXME: Currently FilePath must be an absolute path inside the
@@ -103,15 +106,17 @@ private:
   /// failed.
   bool parse(std::string &ErrorMessage);
 
-  // Tuple (directory, filename, commandline) where 'commandline' points to the
-  // corresponding scalar nodes in the YAML stream.
+  // Tuple (directory, filename, commandline, output) where 'commandline'
+  // points to the corresponding scalar nodes in the YAML stream.
   // If the command line contains a single argument, it is a shell-escaped
   // command line.
   // Otherwise, each entry in the command line vector is a literal
   // argument to the compiler.
-  typedef std::tuple<llvm::yaml::ScalarNode *,
-                     llvm::yaml::ScalarNode *,
-                    std::vector<llvm::yaml::ScalarNode *>> CompileCommandRef;
+  // The output field may be a nullptr.
+  using CompileCommandRef =
+      std::tuple<llvm::yaml::ScalarNode *, llvm::yaml::ScalarNode *,
+                 std::vector<llvm::yaml::ScalarNode *>,
+                 llvm::yaml::ScalarNode *>;
 
   /// \brief Converts the given array of CompileCommandRefs to CompileCommands.
   void getCommands(ArrayRef<CompileCommandRef> CommandsRef,
@@ -132,7 +137,7 @@ private:
   llvm::yaml::Stream YAMLStream;
 };
 
-} // end namespace tooling
-} // end namespace clang
+} // namespace tooling
+} // namespace clang
 
-#endif
+#endif // LLVM_CLANG_TOOLING_JSONCOMPILATIONDATABASE_H

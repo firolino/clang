@@ -1,4 +1,4 @@
-//===--- DiagnosticOptions.h ------------------------------------*- C++ -*-===//
+//===- DiagnosticOptions.h --------------------------------------*- C++ -*-===//
 //
 //                     The LLVM Compiler Infrastructure
 //
@@ -21,8 +21,11 @@ namespace clang {
 /// \brief Specifies which overload candidates to display when overload
 /// resolution fails.
 enum OverloadsShown : unsigned {
-  Ovl_All,  ///< Show all overloads.
-  Ovl_Best  ///< Show just the "best" overload candidates.
+  /// Show all overloads.
+  Ovl_All,
+
+  /// Show just the "best" overload candidates.
+  Ovl_Best
 };
 
 /// \brief A bitmask representing the diagnostic levels used by
@@ -63,11 +66,15 @@ public:
   enum TextDiagnosticFormat { Clang, MSVC, Vi };
 
   // Default values.
-  enum { DefaultTabStop = 8, MaxTabStop = 100,
+  enum {
+    DefaultTabStop = 8,
+    MaxTabStop = 100,
     DefaultMacroBacktraceLimit = 6,
     DefaultTemplateBacktraceLimit = 10,
     DefaultConstexprBacktraceLimit = 10,
-    DefaultSpellCheckingLimit = 50 };
+    DefaultSpellCheckingLimit = 50,
+    DefaultSnippetLineLimit = 1,
+  };
 
   // Define simple diagnostic options (with no accessors).
 #define DIAGOPT(Name, Bits, Default) unsigned Name : Bits;
@@ -96,6 +103,10 @@ public:
   /// prefixes removed.
   std::vector<std::string> Remarks;
 
+  /// The prefixes for comment directives sought by -verify ("expected" by
+  /// default).
+  std::vector<std::string> VerifyPrefixes;
+
 public:
   // Define accessors/mutators for diagnostic options of enumeration type.
 #define DIAGOPT(Name, Bits, Default)
@@ -111,8 +122,8 @@ public:
   }
 };
 
-typedef DiagnosticOptions::TextDiagnosticFormat TextDiagnosticFormat;
+using TextDiagnosticFormat = DiagnosticOptions::TextDiagnosticFormat;
 
-}  // end namespace clang
+} // namespace clang
 
-#endif
+#endif // LLVM_CLANG_BASIC_DIAGNOSTICOPTIONS_H

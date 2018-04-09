@@ -1,11 +1,11 @@
-// RUN: %clang_cc1 -triple i386-apple-darwin10 -analyze -analyzer-checker=security.insecureAPI,security.FloatLoopCounter %s -verify
-// RUN: %clang_cc1 -triple i386-apple-darwin10 -analyze -DUSE_BUILTINS -analyzer-checker=security.insecureAPI,security.FloatLoopCounter %s -verify
-// RUN: %clang_cc1 -triple i386-apple-darwin10 -analyze -DVARIANT -analyzer-checker=security.insecureAPI,security.FloatLoopCounter %s -verify
-// RUN: %clang_cc1 -triple i386-apple-darwin10 -analyze -DUSE_BUILTINS -DVARIANT -analyzer-checker=security.insecureAPI,security.FloatLoopCounter %s -verify
-// RUN: %clang_cc1 -triple x86_64-unknown-cloudabi -analyze -analyzer-checker=security.insecureAPI,security.FloatLoopCounter %s -verify
-// RUN: %clang_cc1 -triple x86_64-unknown-cloudabi -analyze -DUSE_BUILTINS -analyzer-checker=security.insecureAPI,security.FloatLoopCounter %s -verify
-// RUN: %clang_cc1 -triple x86_64-unknown-cloudabi -analyze -DVARIANT -analyzer-checker=security.insecureAPI,security.FloatLoopCounter %s -verify
-// RUN: %clang_cc1 -triple x86_64-unknown-cloudabi -analyze -DUSE_BUILTINS -DVARIANT -analyzer-checker=security.insecureAPI,security.FloatLoopCounter %s -verify
+// RUN: %clang_analyze_cc1 -triple i386-apple-darwin10 -analyzer-checker=security.insecureAPI,security.FloatLoopCounter %s -verify
+// RUN: %clang_analyze_cc1 -triple i386-apple-darwin10 -DUSE_BUILTINS -analyzer-checker=security.insecureAPI,security.FloatLoopCounter %s -verify
+// RUN: %clang_analyze_cc1 -triple i386-apple-darwin10 -DVARIANT -analyzer-checker=security.insecureAPI,security.FloatLoopCounter %s -verify
+// RUN: %clang_analyze_cc1 -triple i386-apple-darwin10 -DUSE_BUILTINS -DVARIANT -analyzer-checker=security.insecureAPI,security.FloatLoopCounter %s -verify
+// RUN: %clang_analyze_cc1 -triple x86_64-unknown-cloudabi -analyzer-checker=security.insecureAPI,security.FloatLoopCounter %s -verify
+// RUN: %clang_analyze_cc1 -triple x86_64-unknown-cloudabi -DUSE_BUILTINS -analyzer-checker=security.insecureAPI,security.FloatLoopCounter %s -verify
+// RUN: %clang_analyze_cc1 -triple x86_64-unknown-cloudabi -DVARIANT -analyzer-checker=security.insecureAPI,security.FloatLoopCounter %s -verify
+// RUN: %clang_analyze_cc1 -triple x86_64-unknown-cloudabi -DUSE_BUILTINS -DVARIANT -analyzer-checker=security.insecureAPI,security.FloatLoopCounter %s -verify
 
 #ifdef USE_BUILTINS
 # define BUILTIN(f) __builtin_ ## f
@@ -144,6 +144,16 @@ void test_strcpy() {
   char *y;
 
   strcpy(x, y); //expected-warning{{Call to function 'strcpy' is insecure as it does not provide bounding of the memory buffer. Replace unbounded copy functions with analogous functions that support length arguments such as 'strlcpy'. CWE-119}}
+}
+
+void test_strcpy_2() {
+  char x[4];
+  strcpy(x, "abcd"); //expected-warning{{Call to function 'strcpy' is insecure as it does not provide bounding of the memory buffer. Replace unbounded copy functions with analogous functions that support length arguments such as 'strlcpy'. CWE-119}}
+}
+
+void test_strcpy_safe() {
+  char x[5];
+  strcpy(x, "abcd");
 }
 
 //===----------------------------------------------------------------------===

@@ -1,4 +1,4 @@
-// RUN: %clang -target x86_64-apple-darwin10 --analyze -Xclang -analyzer-config -Xclang path-diagnostics-alternate=true -Xclang -analyzer-output=plist -o %t %s
+// RUN: %clang_analyze_cc1 -triple x86_64-apple-darwin10 -analyzer-checker=core,deadcode.DeadStores,osx.cocoa.RetainCount,unix.Malloc,unix.MismatchedDeallocator -analyzer-eagerly-assume -analyzer-config path-diagnostics-alternate=true -analyzer-output=plist -o %t -w %s
 // RUN: FileCheck --input-file %t %s
 
 //===----------------------------------------------------------------------===//
@@ -230,7 +230,7 @@ void test_do_while() {
     p = 0;
 
   } while (i< 2);
-  
+
   *p = 0xDEADBEEF;
 }
 
@@ -2438,9 +2438,9 @@ namespace rdar14960554 {
 // CHECK-NEXT:      </array>
 // CHECK-NEXT:      <key>depth</key><integer>0</integer>
 // CHECK-NEXT:      <key>extended_message</key>
-// CHECK-NEXT:      <string>Call to function &apos;CFNumberCreate&apos; returns a Core Foundation object with a +1 retain count</string>
+// CHECK-NEXT:      <string>Call to function &apos;CFNumberCreate&apos; returns a Core Foundation object of type CFNumberRef with a +1 retain count</string>
 // CHECK-NEXT:      <key>message</key>
-// CHECK-NEXT:      <string>Call to function &apos;CFNumberCreate&apos; returns a Core Foundation object with a +1 retain count</string>
+// CHECK-NEXT:      <string>Call to function &apos;CFNumberCreate&apos; returns a Core Foundation object of type CFNumberRef with a +1 retain count</string>
 // CHECK-NEXT:     </dict>
 // CHECK-NEXT:     <dict>
 // CHECK-NEXT:      <key>kind</key><string>control</string>
@@ -11355,9 +11355,9 @@ namespace rdar14960554 {
 // CHECK-NEXT:      </array>
 // CHECK-NEXT:      <key>depth</key><integer>0</integer>
 // CHECK-NEXT:      <key>extended_message</key>
-// CHECK-NEXT:      <string>Method returns an Objective-C object with a +1 retain count</string>
+// CHECK-NEXT:      <string>Method returns an instance of RDar10797980 with a +1 retain count</string>
 // CHECK-NEXT:      <key>message</key>
-// CHECK-NEXT:      <string>Method returns an Objective-C object with a +1 retain count</string>
+// CHECK-NEXT:      <string>Method returns an instance of RDar10797980 with a +1 retain count</string>
 // CHECK-NEXT:     </dict>
 // CHECK-NEXT:     <dict>
 // CHECK-NEXT:      <key>kind</key><string>control</string>
@@ -20042,7 +20042,7 @@ namespace rdar14960554 {
 // CHECK-NEXT:     </dict>
 // CHECK-NEXT:    </array>
 // CHECK-NEXT:    <key>description</key><string>Potential leak of memory pointed to by &apos;buf&apos;</string>
-// CHECK-NEXT:    <key>category</key><string>Memory Error</string>
+// CHECK-NEXT:    <key>category</key><string>Memory error</string>
 // CHECK-NEXT:    <key>type</key><string>Memory leak</string>
 // CHECK-NEXT:    <key>check_name</key><string>unix.Malloc</string>
 // CHECK-NEXT:    <!-- This hash is experimental and going to change! -->
@@ -20284,11 +20284,11 @@ namespace rdar14960554 {
 // CHECK-NEXT:     </dict>
 // CHECK-NEXT:    </array>
 // CHECK-NEXT:    <key>description</key><string>Memory allocated by &apos;new[]&apos; should be deallocated by &apos;delete[]&apos;, not &apos;delete&apos;</string>
-// CHECK-NEXT:    <key>category</key><string>Memory Error</string>
+// CHECK-NEXT:    <key>category</key><string>Memory error</string>
 // CHECK-NEXT:    <key>type</key><string>Bad deallocator</string>
 // CHECK-NEXT:    <key>check_name</key><string>unix.MismatchedDeallocator</string>
 // CHECK-NEXT:    <!-- This hash is experimental and going to change! -->
-// CHECK-NEXT:    <key>issue_hash_content_of_line_in_context</key><string>d9dbbf68db41ab74e2158f4b131abe34</string>
+// CHECK-NEXT:    <key>issue_hash_content_of_line_in_context</key><string>046c88d1c91ff46d6506dff5ff880756</string>
 // CHECK-NEXT:   <key>issue_hash_function_offset</key><string>0</string>
 // CHECK-NEXT:   <key>location</key>
 // CHECK-NEXT:   <dict>
@@ -20325,9 +20325,9 @@ namespace rdar14960554 {
 // CHECK-NEXT:      </array>
 // CHECK-NEXT:      <key>depth</key><integer>0</integer>
 // CHECK-NEXT:      <key>extended_message</key>
-// CHECK-NEXT:      <string>Method returns an Objective-C object with a +1 retain count</string>
+// CHECK-NEXT:      <string>Method returns an instance of NSObject with a +1 retain count</string>
 // CHECK-NEXT:      <key>message</key>
-// CHECK-NEXT:      <string>Method returns an Objective-C object with a +1 retain count</string>
+// CHECK-NEXT:      <string>Method returns an instance of NSObject with a +1 retain count</string>
 // CHECK-NEXT:     </dict>
 // CHECK-NEXT:     <dict>
 // CHECK-NEXT:      <key>kind</key><string>control</string>

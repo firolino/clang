@@ -15,6 +15,7 @@
 #include "clang/FrontendTool/Utils.h"
 #include "clang/ARCMigrate/ARCMTActions.h"
 #include "clang/CodeGen/CodeGenAction.h"
+#include "clang/Config/config.h"
 #include "clang/Driver/Options.h"
 #include "clang/Frontend/CompilerInstance.h"
 #include "clang/Frontend/CompilerInvocation.h"
@@ -30,6 +31,8 @@
 #include "llvm/Support/ErrorHandling.h"
 using namespace clang;
 using namespace llvm::opt;
+
+namespace clang {
 
 static std::unique_ptr<FrontendAction>
 CreateFrontendBaseAction(CompilerInstance &CI) {
@@ -62,6 +65,7 @@ CreateFrontendBaseAction(CompilerInstance &CI) {
   case ParseSyntaxOnly:        return llvm::make_unique<SyntaxOnlyAction>();
   case ModuleFileInfo:         return llvm::make_unique<DumpModuleInfoAction>();
   case VerifyPCH:              return llvm::make_unique<VerifyPCHAction>();
+  case TemplightDump:          return llvm::make_unique<TemplightDumpAction>();
 
   case PluginAction: {
     for (FrontendPluginRegistry::iterator it =
@@ -85,25 +89,26 @@ CreateFrontendBaseAction(CompilerInstance &CI) {
   case PrintDeclContext:       return llvm::make_unique<DeclContextPrintAction>();
   case PrintPreamble:          return llvm::make_unique<PrintPreambleAction>();
   case PrintPreprocessedInput: {
-    if (CI.getPreprocessorOutputOpts().RewriteIncludes)
+    if (CI.getPreprocessorOutputOpts().RewriteIncludes ||
+        CI.getPreprocessorOutputOpts().RewriteImports)
       return llvm::make_unique<RewriteIncludesAction>();
     return llvm::make_unique<PrintPreprocessedAction>();
   }
 
   case RewriteMacros:          return llvm::make_unique<RewriteMacrosAction>();
   case RewriteTest:            return llvm::make_unique<RewriteTestAction>();
-#ifdef CLANG_ENABLE_OBJC_REWRITER
+#if CLANG_ENABLE_OBJC_REWRITER
   case RewriteObjC:            return llvm::make_unique<RewriteObjCAction>();
 #else
   case RewriteObjC:            Action = "RewriteObjC"; break;
 #endif
-#ifdef CLANG_ENABLE_ARCMT
+#if CLANG_ENABLE_ARCMT
   case MigrateSource:
     return llvm::make_unique<arcmt::MigrateSourceAction>();
 #else
   case MigrateSource:          Action = "MigrateSource"; break;
 #endif
-#ifdef CLANG_ENABLE_STATIC_ANALYZER
+#if CLANG_ENABLE_STATIC_ANALYZER
   case RunAnalysis:            return llvm::make_unique<ento::AnalysisAction>();
 #else
   case RunAnalysis:            Action = "RunAnalysis"; break;
@@ -111,8 +116,8 @@ CreateFrontendBaseAction(CompilerInstance &CI) {
   case RunPreprocessorOnly:    return llvm::make_unique<PreprocessOnlyAction>();
   }
 
-#if !defined(CLANG_ENABLE_ARCMT) || !defined(CLANG_ENABLE_STATIC_ANALYZER) \
-  || !defined(CLANG_ENABLE_OBJC_REWRITER)
+#if !CLANG_ENABLE_ARCMT || !CLANG_ENABLE_STATIC_ANALYZER \
+  || !CLANG_ENABLE_OBJC_REWRITER
   CI.getDiagnostics().Report(diag::err_fe_action_not_available) << Action;
   return 0;
 #else
@@ -120,7 +125,7 @@ CreateFrontendBaseAction(CompilerInstance &CI) {
 #endif
 }
 
-static std::unique_ptr<FrontendAction>
+std::unique_ptr<FrontendAction>
 CreateFrontendAction(CompilerInstance &CI) {
   // Create the underlying action.
   std::unique_ptr<FrontendAction> Act = CreateFrontendBaseAction(CI);
@@ -133,7 +138,7 @@ CreateFrontendAction(CompilerInstance &CI) {
     Act = llvm::make_unique<FixItRecompile>(std::move(Act));
   }
   
-#ifdef CLANG_ENABLE_ARCMT
+#if CLANG_ENABLE_ARCMT
   if (CI.getFrontendOpts().ProgramAction != frontend::MigrateSource &&
       CI.getFrontendOpts().ProgramAction != frontend::GeneratePCH) {
     // Potentially wrap the base FE action in an ARC Migrate Tool action.
@@ -171,13 +176,14 @@ CreateFrontendAction(CompilerInstance &CI) {
   return Act;
 }
 
-bool clang::ExecuteCompilerInvocation(CompilerInstance *Clang) {
+bool ExecuteCompilerInvocation(CompilerInstance *Clang) {
   // Honor -help.
   if (Clang->getFrontendOpts().ShowHelp) {
-    std::unique_ptr<OptTable> Opts(driver::createDriverOptTable());
+    std::unique_ptr<OptTable> Opts = driver::createDriverOptTable();
     Opts->PrintHelp(llvm::outs(), "clang -cc1",
                     "LLVM 'Clang' Compiler: http://clang.llvm.org",
-                    /*Include=*/ driver::options::CC1Option, /*Exclude=*/ 0);
+                    /*Include=*/driver::options::CC1Option,
+                    /*Exclude=*/0, /*ShowAllAliases=*/false);
     return true;
   }
 
@@ -225,7 +231,7 @@ bool clang::ExecuteCompilerInvocation(CompilerInstance *Clang) {
     llvm::cl::ParseCommandLineOptions(NumArgs + 1, Args.get());
   }
 
-#ifdef CLANG_ENABLE_STATIC_ANALYZER
+#if CLANG_ENABLE_STATIC_ANALYZER
   // Honor -analyzer-checker-help.
   // This should happen AFTER plugins have been loaded!
   if (Clang->getAnalyzerOpts()->ShowCheckerHelp) {
@@ -251,3 +257,5 @@ bool clang::ExecuteCompilerInvocation(CompilerInstance *Clang) {
     BuryPointer(std::move(Act));
   return Success;
 }
+
+} // namespace clang 

@@ -1,4 +1,4 @@
-// RUN: %clang_cc1 %s -triple x86_64-apple-darwin10 -emit-llvm -o - | FileCheck %s
+// RUN: %clang_cc1 -std=c++98 %s -triple x86_64-apple-darwin10 -emit-llvm -o - | FileCheck %s
 
 struct A {
   virtual ~A();
@@ -244,7 +244,7 @@ namespace PR11124 {
   struct C : B { C(); };      
   C::C() : A(3), B() {}
   // CHECK-LABEL: define void @_ZN7PR111241CC1Ev
-  // CHECK: call void @llvm.memset.p0i8.i64(i8* {{.*}}, i8 0, i64 12, i32 8, i1 false)
+  // CHECK: call void @llvm.memset.p0i8.i64(i8* align 8 {{.*}}, i8 0, i64 12, i1 false)
   // CHECK-NEXT: call void @_ZN7PR111241BC2Ev
   // Make sure C::C doesn't overwrite parts of A while it is zero-initializing B
 
@@ -252,7 +252,7 @@ namespace PR11124 {
   struct C2 : B2 { C2(); };      
   C2::C2() : A(3), B2() {}
   // CHECK-LABEL: define void @_ZN7PR111242C2C1Ev
-  // CHECK: call void @llvm.memcpy.p0i8.p0i8.i64(i8* %{{.*}}, i8* {{.*}}, i64 16, i32 8, i1 false)
+  // CHECK: call void @llvm.memcpy.p0i8.p0i8.i64(i8* align 8 %{{.*}}, i8* align 8 {{.*}}, i64 16, i1 false)
   // CHECK-NEXT: call void @_ZN7PR111242B2C2Ev
 }
 
@@ -314,6 +314,14 @@ namespace PR20256 {
   // CHECK: call void @llvm.memset
   // CHECK: }
 }
+
+// CHECK-LABEL: define {{.*}}@_Z20explicitly_defaultedv
+int explicitly_defaulted() {
+  struct A { A() = default; int n; };
+  // CHECK: call void @llvm.memset
+  A a = A();
+  return a.n;
+} // CHECK-LABEL: }
 
 // CHECK-LABEL: define linkonce_odr void @_ZN8zeroinit2X3IiEC2Ev(%"struct.zeroinit::X3"* %this) unnamed_addr
 // CHECK: call void @llvm.memset.p0i8.i64

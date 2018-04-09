@@ -1,4 +1,4 @@
-//===--- SourceLocation.h - Compact identifier for Source Files -*- C++ -*-===//
+//===- SourceLocation.h - Compact identifier for Source Files ---*- C++ -*-===//
 //
 //                     The LLVM Compiler Infrastructure
 //
@@ -6,28 +6,29 @@
 // License. See LICENSE.TXT for details.
 //
 //===----------------------------------------------------------------------===//
-///
+//
 /// \file
 /// \brief Defines the clang::SourceLocation class and associated facilities.
-///
+//
 //===----------------------------------------------------------------------===//
 
 #ifndef LLVM_CLANG_BASIC_SOURCELOCATION_H
 #define LLVM_CLANG_BASIC_SOURCELOCATION_H
 
 #include "clang/Basic/LLVM.h"
-#include "llvm/Support/Compiler.h"
+#include "llvm/ADT/StringRef.h"
 #include "llvm/Support/PointerLikeTypeTraits.h"
 #include <cassert>
-#include <functional>
+#include <cstdint>
 #include <string>
 #include <utility>
 
 namespace llvm {
-  class MemoryBuffer;
-  template <typename T> struct DenseMapInfo;
-  template <typename T> struct isPodLike;
-}
+
+template <typename T> struct DenseMapInfo;
+template <typename T> struct isPodLike;
+
+} // namespace llvm
 
 namespace clang {
 
@@ -39,10 +40,9 @@ class SourceManager;
 class FileID {
   /// \brief A mostly-opaque identifier, where 0 is "invalid", >0 is 
   /// this module, and <-1 is something loaded from another module.
-  int ID;
-public:
-  FileID() : ID(0) {}
+  int ID = 0;
 
+public:
   bool isValid() const { return ID != 0; }
   bool isInvalid() const { return ID == 0; }
 
@@ -57,18 +57,18 @@ public:
   unsigned getHashValue() const { return static_cast<unsigned>(ID); }
 
 private:
-  friend class SourceManager;
   friend class ASTWriter;
   friend class ASTReader;
+  friend class SourceManager;
   
   static FileID get(int V) {
     FileID F;
     F.ID = V;
     return F;
   }
+
   int getOpaqueValue() const { return ID; }
 };
-
 
 /// \brief Encodes a location in the source. The SourceManager can decode this
 /// to get at the full include stack, line and column information.
@@ -86,17 +86,17 @@ private:
 ///
 /// It is important that this type remains small. It is currently 32 bits wide.
 class SourceLocation {
-  unsigned ID;
-  friend class SourceManager;
   friend class ASTReader;
   friend class ASTWriter;
+  friend class SourceManager;
+
+  unsigned ID = 0;
+
   enum : unsigned {
     MacroIDBit = 1U << 31
   };
+
 public:
-
-  SourceLocation() : ID(0) {}
-
   bool isFileID() const  { return (ID & MacroIDBit) == 0; }
   bool isMacroID() const { return (ID & MacroIDBit) != 0; }
 
@@ -127,8 +127,8 @@ private:
     L.ID = MacroIDBit | ID;
     return L;
   }
-public:
 
+public:
   /// \brief Return a source location with the specified offset from this
   /// SourceLocation.
   SourceLocation getLocWithOffset(int Offset) const {
@@ -172,6 +172,11 @@ public:
     return getFromRawEncoding((unsigned)(uintptr_t)Encoding);
   }
 
+  static bool isPairOfFileLocations(SourceLocation Start, SourceLocation End) {
+    return Start.isValid() && Start.isFileID() && End.isValid() &&
+           End.isFileID();
+  }
+
   void print(raw_ostream &OS, const SourceManager &SM) const;
   std::string printToString(const SourceManager &SM) const;
   void dump(const SourceManager &SM) const;
@@ -193,8 +198,9 @@ inline bool operator<(const SourceLocation &LHS, const SourceLocation &RHS) {
 class SourceRange {
   SourceLocation B;
   SourceLocation E;
+
 public:
-  SourceRange(): B(SourceLocation()), E(SourceLocation()) {}
+  SourceRange() = default;
   SourceRange(SourceLocation loc) : B(loc), E(loc) {}
   SourceRange(SourceLocation begin, SourceLocation end) : B(begin), E(end) {}
 
@@ -225,9 +231,10 @@ public:
 /// range.
 class CharSourceRange { 
   SourceRange Range;
-  bool IsTokenRange;
+  bool IsTokenRange = false;
+
 public:
-  CharSourceRange() : IsTokenRange(false) {}
+  CharSourceRange() = default;
   CharSourceRange(SourceRange R, bool ITR) : Range(R), IsTokenRange(ITR) {}
 
   static CharSourceRange getTokenRange(SourceRange R) {
@@ -241,6 +248,7 @@ public:
   static CharSourceRange getTokenRange(SourceLocation B, SourceLocation E) {
     return getTokenRange(SourceRange(B, E));
   }
+
   static CharSourceRange getCharRange(SourceLocation B, SourceLocation E) {
     return getCharRange(SourceRange(B, E));
   }
@@ -262,17 +270,83 @@ public:
   bool isInvalid() const { return !isValid(); }
 };
 
+/// \brief Represents an unpacked "presumed" location which can be presented
+/// to the user.
+///
+/// A 'presumed' location can be modified by \#line and GNU line marker
+/// directives and is always the expansion point of a normal location.
+///
+/// You can get a PresumedLoc from a SourceLocation with SourceManager.
+class PresumedLoc {
+  const char *Filename = nullptr;
+  unsigned Line, Col;
+  SourceLocation IncludeLoc;
+
+public:
+  PresumedLoc() = default;
+  PresumedLoc(const char *FN, unsigned Ln, unsigned Co, SourceLocation IL)
+      : Filename(FN), Line(Ln), Col(Co), IncludeLoc(IL) {}
+
+  /// \brief Return true if this object is invalid or uninitialized.
+  ///
+  /// This occurs when created with invalid source locations or when walking
+  /// off the top of a \#include stack.
+  bool isInvalid() const { return Filename == nullptr; }
+  bool isValid() const { return Filename != nullptr; }
+
+  /// \brief Return the presumed filename of this location.
+  ///
+  /// This can be affected by \#line etc.
+  const char *getFilename() const {
+    assert(isValid());
+    return Filename;
+  }
+
+  /// \brief Return the presumed line number of this location.
+  ///
+  /// This can be affected by \#line etc.
+  unsigned getLine() const {
+    assert(isValid());
+    return Line;
+  }
+
+  /// \brief Return the presumed column number of this location.
+  ///
+  /// This cannot be affected by \#line, but is packaged here for convenience.
+  unsigned getColumn() const {
+    assert(isValid());
+    return Col;
+  }
+
+  /// \brief Return the presumed include location of this location.
+  ///
+  /// This can be affected by GNU linemarker directives.
+  SourceLocation getIncludeLoc() const {
+    assert(isValid());
+    return IncludeLoc;
+  }
+};
+
+class FileEntry;
+
 /// \brief A SourceLocation and its associated SourceManager.
 ///
 /// This is useful for argument passing to functions that expect both objects.
 class FullSourceLoc : public SourceLocation {
-  const SourceManager *SrcMgr;
+  const SourceManager *SrcMgr = nullptr;
+
 public:
   /// \brief Creates a FullSourceLoc where isValid() returns \c false.
-  explicit FullSourceLoc() : SrcMgr(nullptr) {}
+  FullSourceLoc() = default;
 
   explicit FullSourceLoc(SourceLocation Loc, const SourceManager &SM)
-    : SourceLocation(Loc), SrcMgr(&SM) {}
+      : SourceLocation(Loc), SrcMgr(&SM) {}
+
+  bool hasManager() const {
+      bool hasSrcMgr =  SrcMgr != nullptr;
+      assert(hasSrcMgr == isValid() && "FullSourceLoc has location but no manager");
+      return hasSrcMgr;
+  }
 
   /// \pre This FullSourceLoc has an associated SourceManager.
   const SourceManager &getManager() const {
@@ -284,6 +358,13 @@ public:
 
   FullSourceLoc getExpansionLoc() const;
   FullSourceLoc getSpellingLoc() const;
+  FullSourceLoc getFileLoc() const;
+  std::pair<FullSourceLoc, FullSourceLoc> getImmediateExpansionRange() const;
+  PresumedLoc getPresumedLoc(bool UseLineDirectives = true) const;
+  bool isMacroArgExpansion(FullSourceLoc *StartLoc = nullptr) const;
+  FullSourceLoc getImmediateMacroCallerLoc() const;
+  std::pair<FullSourceLoc, StringRef> getModuleImportLoc() const;
+  unsigned getFileOffset() const;
 
   unsigned getExpansionLineNumber(bool *Invalid = nullptr) const;
   unsigned getExpansionColumnNumber(bool *Invalid = nullptr) const;
@@ -293,6 +374,12 @@ public:
 
   const char *getCharacterData(bool *Invalid = nullptr) const;
 
+  unsigned getLineNumber(bool *Invalid = nullptr) const;
+  unsigned getColumnNumber(bool *Invalid = nullptr) const;
+
+  std::pair<FullSourceLoc, FullSourceLoc> getExpansionRange() const;
+
+  const FileEntry *getFileEntry() const;
 
   /// \brief Return a StringRef to the source buffer data for the
   /// specified FileID.
@@ -321,8 +408,7 @@ public:
   }
 
   /// \brief Comparison function class, useful for sorting FullSourceLocs.
-  struct BeforeThanCompare : public std::binary_function<FullSourceLoc,
-                                                         FullSourceLoc, bool> {
+  struct BeforeThanCompare {
     bool operator()(const FullSourceLoc& lhs, const FullSourceLoc& rhs) const {
       return lhs.isBeforeInTranslationUnitThan(rhs);
     }
@@ -333,76 +419,31 @@ public:
   /// This is useful for debugging.
   void dump() const;
 
-  friend inline bool
+  friend bool
   operator==(const FullSourceLoc &LHS, const FullSourceLoc &RHS) {
     return LHS.getRawEncoding() == RHS.getRawEncoding() &&
           LHS.SrcMgr == RHS.SrcMgr;
   }
 
-  friend inline bool
+  friend bool
   operator!=(const FullSourceLoc &LHS, const FullSourceLoc &RHS) {
     return !(LHS == RHS);
   }
-
 };
 
-/// \brief Represents an unpacked "presumed" location which can be presented
-/// to the user.
-///
-/// A 'presumed' location can be modified by \#line and GNU line marker
-/// directives and is always the expansion point of a normal location.
-///
-/// You can get a PresumedLoc from a SourceLocation with SourceManager.
-class PresumedLoc {
-  const char *Filename;
-  unsigned Line, Col;
-  SourceLocation IncludeLoc;
-public:
-  PresumedLoc() : Filename(nullptr) {}
-  PresumedLoc(const char *FN, unsigned Ln, unsigned Co, SourceLocation IL)
-    : Filename(FN), Line(Ln), Col(Co), IncludeLoc(IL) {
-  }
-
-  /// \brief Return true if this object is invalid or uninitialized.
-  ///
-  /// This occurs when created with invalid source locations or when walking
-  /// off the top of a \#include stack.
-  bool isInvalid() const { return Filename == nullptr; }
-  bool isValid() const { return Filename != nullptr; }
-
-  /// \brief Return the presumed filename of this location.
-  ///
-  /// This can be affected by \#line etc.
-  const char *getFilename() const { assert(isValid()); return Filename; }
-
-  /// \brief Return the presumed line number of this location.
-  ///
-  /// This can be affected by \#line etc.
-  unsigned getLine() const { assert(isValid()); return Line; }
-
-  /// \brief Return the presumed column number of this location.
-  ///
-  /// This cannot be affected by \#line, but is packaged here for convenience.
-  unsigned getColumn() const { assert(isValid()); return Col; }
-
-  /// \brief Return the presumed include location of this location.
-  ///
-  /// This can be affected by GNU linemarker directives.
-  SourceLocation getIncludeLoc() const { assert(isValid()); return IncludeLoc; }
-};
-
-
-}  // end namespace clang
+} // namespace clang
 
 namespace llvm {
+
   /// Define DenseMapInfo so that FileID's can be used as keys in DenseMap and
   /// DenseSets.
   template <>
   struct DenseMapInfo<clang::FileID> {
-    static inline clang::FileID getEmptyKey() {
-      return clang::FileID();
+    static clang::FileID getEmptyKey() {
+      return {};
     }
-    static inline clang::FileID getTombstoneKey() {
+
+    static clang::FileID getTombstoneKey() {
       return clang::FileID::getSentinel();
     }
 
@@ -422,17 +463,18 @@ namespace llvm {
 
   // Teach SmallPtrSet how to handle SourceLocation.
   template<>
-  class PointerLikeTypeTraits<clang::SourceLocation> {
-  public:
-    static inline void *getAsVoidPointer(clang::SourceLocation L) {
+  struct PointerLikeTypeTraits<clang::SourceLocation> {
+    enum { NumLowBitsAvailable = 0 };
+
+    static void *getAsVoidPointer(clang::SourceLocation L) {
       return L.getPtrEncoding();
     }
-    static inline clang::SourceLocation getFromVoidPointer(void *P) {
+
+    static clang::SourceLocation getFromVoidPointer(void *P) {
       return clang::SourceLocation::getFromRawEncoding((unsigned)(uintptr_t)P);
     }
-    enum { NumLowBitsAvailable = 0 };
   };
 
-}  // end namespace llvm
+} // namespace llvm
 
-#endif
+#endif // LLVM_CLANG_BASIC_SOURCELOCATION_H

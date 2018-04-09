@@ -83,7 +83,7 @@ createASTReader(CompilerInstance &CI, StringRef pchFile,
                 ASTDeserializationListener *deserialListener = nullptr) {
   Preprocessor &PP = CI.getPreprocessor();
   std::unique_ptr<ASTReader> Reader;
-  Reader.reset(new ASTReader(PP, CI.getASTContext(),
+  Reader.reset(new ASTReader(PP, &CI.getASTContext(),
                              CI.getPCHContainerReader(),
                              /*Extensions=*/{ },
                              /*isysroot=*/"", /*DisableValidation=*/true));
@@ -147,7 +147,7 @@ IntrusiveRefCntPtr<ExternalSemaSource> clang::createChainedIncludesSource(
 
     std::unique_ptr<CompilerInstance> Clang(
         new CompilerInstance(CI.getPCHContainerOperations()));
-    Clang->setInvocation(CInvok.release());
+    Clang->setInvocation(std::move(CInvok));
     Clang->setDiagnostics(Diags.get());
     Clang->setTarget(TargetInfo::CreateTargetInfo(
         Clang->getDiagnostics(), Clang->getInvocation().TargetOpts));
@@ -159,7 +159,7 @@ IntrusiveRefCntPtr<ExternalSemaSource> clang::createChainedIncludesSource(
     Clang->createASTContext();
 
     auto Buffer = std::make_shared<PCHBuffer>();
-    ArrayRef<llvm::IntrusiveRefCntPtr<ModuleFileExtension>> Extensions;
+    ArrayRef<std::shared_ptr<ModuleFileExtension>> Extensions;
     auto consumer = llvm::make_unique<PCHGenerator>(
         Clang->getPreprocessor(), "-", /*isysroot=*/"", Buffer,
         Extensions, /*AllowASTWithErrors=*/true);

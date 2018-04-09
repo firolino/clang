@@ -30,7 +30,7 @@ using namespace clang;
 
 void UnqualifiedId::setTemplateId(TemplateIdAnnotation *TemplateId) {
   assert(TemplateId && "NULL template-id annotation?");
-  Kind = IK_TemplateId;
+  Kind = UnqualifiedIdKind::IK_TemplateId;
   this->TemplateId = TemplateId;
   StartLocation = TemplateId->TemplateNameLoc;
   EndLocation = TemplateId->RAngleLoc;
@@ -38,7 +38,7 @@ void UnqualifiedId::setTemplateId(TemplateIdAnnotation *TemplateId) {
 
 void UnqualifiedId::setConstructorTemplateId(TemplateIdAnnotation *TemplateId) {
   assert(TemplateId && "NULL template-id annotation?");
-  Kind = IK_ConstructorTemplateId;
+  Kind = UnqualifiedIdKind::IK_ConstructorTemplateId;
   this->TemplateId = TemplateId;
   StartLocation = TemplateId->TemplateNameLoc;
   EndLocation = TemplateId->RAngleLoc;
@@ -173,6 +173,8 @@ DeclaratorChunk DeclaratorChunk::getFunction(bool hasProto,
                                              unsigned NumExceptions,
                                              Expr *NoexceptExpr,
                                              CachedTokens *ExceptionSpecTokens,
+                                             ArrayRef<NamedDecl*>
+                                                 DeclsInPrototype,
                                              SourceLocation LocalRangeBegin,
                                              SourceLocation LocalRangeEnd,
                                              Declarator &TheDeclarator,
@@ -204,7 +206,7 @@ DeclaratorChunk DeclaratorChunk::getFunction(bool hasProto,
   I.Fun.ExceptionSpecType       = ESpecType;
   I.Fun.ExceptionSpecLocBeg     = ESpecRange.getBegin().getRawEncoding();
   I.Fun.ExceptionSpecLocEnd     = ESpecRange.getEnd().getRawEncoding();
-  I.Fun.NumExceptions           = 0;
+  I.Fun.NumExceptionsOrDecls    = 0;
   I.Fun.Exceptions              = nullptr;
   I.Fun.NoexceptExpr            = nullptr;
   I.Fun.HasTrailingReturnType   = TrailingReturnType.isUsable() ||
@@ -223,13 +225,15 @@ DeclaratorChunk DeclaratorChunk::getFunction(bool hasProto,
     if (!TheDeclarator.InlineStorageUsed &&
         NumParams <= llvm::array_lengthof(TheDeclarator.InlineParams)) {
       I.Fun.Params = TheDeclarator.InlineParams;
+      new (I.Fun.Params) ParamInfo[NumParams];
       I.Fun.DeleteParams = false;
       TheDeclarator.InlineStorageUsed = true;
     } else {
       I.Fun.Params = new DeclaratorChunk::ParamInfo[NumParams];
       I.Fun.DeleteParams = true;
     }
-    memcpy(I.Fun.Params, Params, sizeof(Params[0]) * NumParams);
+    for (unsigned i = 0; i < NumParams; i++)
+      I.Fun.Params[i] = std::move(Params[i]);    
   }
 
   // Check what exception specification information we should actually store.
@@ -238,7 +242,7 @@ DeclaratorChunk DeclaratorChunk::getFunction(bool hasProto,
   case EST_Dynamic:
     // new[] an exception array if needed
     if (NumExceptions) {
-      I.Fun.NumExceptions = NumExceptions;
+      I.Fun.NumExceptionsOrDecls = NumExceptions;
       I.Fun.Exceptions = new DeclaratorChunk::TypeAndRange[NumExceptions];
       for (unsigned i = 0; i != NumExceptions; ++i) {
         I.Fun.Exceptions[i].Ty = Exceptions[i];
@@ -255,6 +259,17 @@ DeclaratorChunk DeclaratorChunk::getFunction(bool hasProto,
     I.Fun.ExceptionSpecTokens = ExceptionSpecTokens;
     break;
   }
+
+  if (!DeclsInPrototype.empty()) {
+    assert(ESpecType == EST_None && NumExceptions == 0 &&
+           "cannot have exception specifiers and decls in prototype");
+    I.Fun.NumExceptionsOrDecls = DeclsInPrototype.size();
+    // Copy the array of decls into stable heap storage.
+    I.Fun.DeclsInPrototype = new NamedDecl *[DeclsInPrototype.size()];
+    for (size_t J = 0; J < DeclsInPrototype.size(); ++J)
+      I.Fun.DeclsInPrototype[J] = DeclsInPrototype[J];
+  }
+
   return I;
 }
 
@@ -321,6 +336,7 @@ bool Declarator::isDeclarationOfFunction() const {
     case TST_decimal32:
     case TST_decimal64:
     case TST_double:
+    case TST_Float16:
     case TST_float128:
     case TST_enum:
     case TST_error:
@@ -371,16 +387,16 @@ bool Declarator::isDeclarationOfFunction() const {
 }
 
 bool Declarator::isStaticMember() {
-  assert(getContext() == MemberContext);
+  assert(getContext() == DeclaratorContext::MemberContext);
   return getDeclSpec().getStorageClassSpec() == DeclSpec::SCS_static ||
-         (getName().Kind == UnqualifiedId::IK_OperatorFunctionId &&
+         (getName().Kind == UnqualifiedIdKind::IK_OperatorFunctionId &&
           CXXMethodDecl::isStaticOverloadedOperator(
               getName().OperatorFunctionId.Operator));
 }
 
 bool Declarator::isCtorOrDtor() {
-  return (getName().getKind() == UnqualifiedId::IK_ConstructorName) ||
-         (getName().getKind() == UnqualifiedId::IK_DestructorName);
+  return (getName().getKind() == UnqualifiedIdKind::IK_ConstructorName) ||
+         (getName().getKind() == UnqualifiedIdKind::IK_DestructorName);
 }
 
 bool DeclSpec::hasTagDefinition() const {
@@ -490,6 +506,7 @@ const char *DeclSpec::getSpecifierName(DeclSpec::TST T,
   case DeclSpec::TST_half:        return "half";
   case DeclSpec::TST_float:       return "float";
   case DeclSpec::TST_double:      return "double";
+  case DeclSpec::TST_float16:     return "_Float16";
   case DeclSpec::TST_float128:    return "__float128";
   case DeclSpec::TST_bool:        return Policy.Bool ? "bool" : "_Bool";
   case DeclSpec::TST_decimal32:   return "_Decimal32";
@@ -543,7 +560,7 @@ bool DeclSpec::SetStorageClassSpec(Sema &S, SCS SC, SourceLocation Loc,
   // OpenCL v1.2 s6.8 changes this to "The auto and register storage-class
   // specifiers are not supported."
   if (S.getLangOpts().OpenCL &&
-      !S.getOpenCLOptions().cl_clang_storage_class_specifiers) {
+      !S.getOpenCLOptions().isEnabled("cl_clang_storage_class_specifiers")) {
     switch (SC) {
     case SCS_extern:
     case SCS_private_extern:
@@ -610,14 +627,16 @@ bool DeclSpec::SetTypeSpecWidth(TSW W, SourceLocation Loc,
                                 const char *&PrevSpec,
                                 unsigned &DiagID,
                                 const PrintingPolicy &Policy) {
-  // Overwrite TSWLoc only if TypeSpecWidth was unspecified, so that
+  // Overwrite TSWRange.Begin only if TypeSpecWidth was unspecified, so that
   // for 'long long' we will keep the source location of the first 'long'.
   if (TypeSpecWidth == TSW_unspecified)
-    TSWLoc = Loc;
+    TSWRange.setBegin(Loc);
   // Allow turning long -> long long.
   else if (W != TSW_longlong || TypeSpecWidth != TSW_long)
     return BadSpecifier(W, (TSW)TypeSpecWidth, PrevSpec, DiagID);
   TypeSpecWidth = W;
+  // Remember location of the last 'long'
+  TSWRange.setEnd(Loc);
   return false;
 }
 
@@ -950,18 +969,6 @@ bool DeclSpec::SetConstexprSpec(SourceLocation Loc, const char *&PrevSpec,
   return false;
 }
 
-bool DeclSpec::SetConceptSpec(SourceLocation Loc, const char *&PrevSpec,
-                              unsigned &DiagID) {
-  if (Concept_specified) {
-    DiagID = diag::ext_duplicate_declspec;
-    PrevSpec = "concept";
-    return true;
-  }
-  Concept_specified = true;
-  ConceptLoc = Loc;
-  return false;
-}
-
 void DeclSpec::SaveWrittenBuiltinSpecs() {
   writtenBS.Sign = getTypeSpecSign();
   writtenBS.Width = getTypeSpecWidth();
@@ -997,9 +1004,9 @@ void DeclSpec::Finish(Sema &S, const PrintingPolicy &Policy) {
        TypeQualifiers)) {
     const unsigned NumLocs = 9;
     SourceLocation ExtraLocs[NumLocs] = {
-      TSWLoc, TSCLoc, TSSLoc, AltiVecLoc,
-      TQ_constLoc, TQ_restrictLoc, TQ_volatileLoc, TQ_atomicLoc, TQ_unalignedLoc
-    };
+        TSWRange.getBegin(), TSCLoc,       TSSLoc,
+        AltiVecLoc,          TQ_constLoc,  TQ_restrictLoc,
+        TQ_volatileLoc,      TQ_atomicLoc, TQ_unalignedLoc};
     FixItHint Hints[NumLocs];
     SourceLocation FirstLoc;
     for (unsigned I = 0; I != NumLocs; ++I) {
@@ -1041,8 +1048,8 @@ void DeclSpec::Finish(Sema &S, const PrintingPolicy &Policy) {
       // Only 'short' and 'long long' are valid with vector bool. (PIM 2.1)
       if ((TypeSpecWidth != TSW_unspecified) && (TypeSpecWidth != TSW_short) &&
           (TypeSpecWidth != TSW_longlong))
-        S.Diag(TSWLoc, diag::err_invalid_vector_bool_decl_spec)
-          << getSpecifierName((TSW)TypeSpecWidth);
+        S.Diag(TSWRange.getBegin(), diag::err_invalid_vector_bool_decl_spec)
+            << getSpecifierName((TSW)TypeSpecWidth);
 
       // vector bool long long requires VSX support or ZVector.
       if ((TypeSpecWidth == TSW_longlong) &&
@@ -1059,21 +1066,25 @@ void DeclSpec::Finish(Sema &S, const PrintingPolicy &Policy) {
       // vector long double and vector long long double are never allowed.
       // vector double is OK for Power7 and later, and ZVector.
       if (TypeSpecWidth == TSW_long || TypeSpecWidth == TSW_longlong)
-        S.Diag(TSWLoc, diag::err_invalid_vector_long_double_decl_spec);
+        S.Diag(TSWRange.getBegin(),
+               diag::err_invalid_vector_long_double_decl_spec);
       else if (!S.Context.getTargetInfo().hasFeature("vsx") &&
                !S.getLangOpts().ZVector)
         S.Diag(TSTLoc, diag::err_invalid_vector_double_decl_spec);
     } else if (TypeSpecType == TST_float) {
-      // vector float is unsupported for ZVector.
-      if (S.getLangOpts().ZVector)
+      // vector float is unsupported for ZVector unless we have the
+      // vector-enhancements facility 1 (ISA revision 12).
+      if (S.getLangOpts().ZVector &&
+          !S.Context.getTargetInfo().hasFeature("arch12"))
         S.Diag(TSTLoc, diag::err_invalid_vector_float_decl_spec);
     } else if (TypeSpecWidth == TSW_long) {
       // vector long is unsupported for ZVector and deprecated for AltiVec.
       if (S.getLangOpts().ZVector)
-        S.Diag(TSWLoc, diag::err_invalid_vector_long_decl_spec);
+        S.Diag(TSWRange.getBegin(), diag::err_invalid_vector_long_decl_spec);
       else
-        S.Diag(TSWLoc, diag::warn_vector_long_decl_spec_combination)
-          << getSpecifierName((TST)TypeSpecType, Policy);
+        S.Diag(TSWRange.getBegin(),
+               diag::warn_vector_long_decl_spec_combination)
+            << getSpecifierName((TST)TypeSpecType, Policy);
     }
 
     if (TypeAltiVecPixel) {
@@ -1106,8 +1117,8 @@ void DeclSpec::Finish(Sema &S, const PrintingPolicy &Policy) {
     if (TypeSpecType == TST_unspecified)
       TypeSpecType = TST_int; // short -> short int, long long -> long long int.
     else if (TypeSpecType != TST_int) {
-      S.Diag(TSWLoc, diag::err_invalid_width_spec) << (int)TypeSpecWidth
-        <<  getSpecifierName((TST)TypeSpecType, Policy);
+      S.Diag(TSWRange.getBegin(), diag::err_invalid_width_spec)
+          << (int)TypeSpecWidth << getSpecifierName((TST)TypeSpecType, Policy);
       TypeSpecType = TST_int;
       TypeSpecOwned = false;
     }
@@ -1116,8 +1127,8 @@ void DeclSpec::Finish(Sema &S, const PrintingPolicy &Policy) {
     if (TypeSpecType == TST_unspecified)
       TypeSpecType = TST_int;  // long -> long int.
     else if (TypeSpecType != TST_int && TypeSpecType != TST_double) {
-      S.Diag(TSWLoc, diag::err_invalid_width_spec) << (int)TypeSpecWidth
-        << getSpecifierName((TST)TypeSpecType, Policy);
+      S.Diag(TSWRange.getBegin(), diag::err_invalid_width_spec)
+          << (int)TypeSpecWidth << getSpecifierName((TST)TypeSpecType, Policy);
       TypeSpecType = TST_int;
       TypeSpecOwned = false;
     }
@@ -1270,7 +1281,7 @@ bool DeclSpec::isMissingDeclaratorOk() {
 void UnqualifiedId::setOperatorFunctionId(SourceLocation OperatorLoc, 
                                           OverloadedOperatorKind Op,
                                           SourceLocation SymbolLocations[3]) {
-  Kind = IK_OperatorFunctionId;
+  Kind = UnqualifiedIdKind::IK_OperatorFunctionId;
   StartLocation = OperatorLoc;
   EndLocation = OperatorLoc;
   OperatorFunctionId.Operator = Op;

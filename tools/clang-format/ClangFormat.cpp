@@ -22,6 +22,7 @@
 #include "clang/Rewrite/Core/Rewriter.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/FileSystem.h"
+#include "llvm/Support/Process.h"
 #include "llvm/Support/Signals.h"
 
 using namespace llvm;
@@ -101,6 +102,10 @@ static cl::opt<bool> SortIncludes(
     cl::desc("If set, overrides the include sorting behavior determined by the "
              "SortIncludes style flag"),
     cl::cat(ClangFormatCategory));
+
+static cl::opt<bool>
+    Verbose("verbose", cl::desc("If set, shows the list of processed files"),
+            cl::cat(ClangFormatCategory));
 
 static cl::list<std::string> FileNames(cl::Positional, cl::desc("[<file> ...]"),
                                        cl::cat(ClangFormatCategory));
@@ -236,8 +241,15 @@ static void outputReplacementsXML(const Replacements &Replaces) {
 
 // Returns true on error.
 static bool format(StringRef FileName) {
+  if (!OutputXML && Inplace && FileName == "-") {
+    errs() << "error: cannot use -i when reading from stdin.\n";
+    return false;
+  }
+  // On Windows, overwriting a file with an open file mapping doesn't work,
+  // so read the whole file into memory when formatting in-place.
   ErrorOr<std::unique_ptr<MemoryBuffer>> CodeOrErr =
-      MemoryBuffer::getFileOrSTDIN(FileName);
+      !OutputXML && Inplace ? MemoryBuffer::getFileAsStream(FileName) :
+                              MemoryBuffer::getFileOrSTDIN(FileName);
   if (std::error_code EC = CodeOrErr.getError()) {
     errs() << EC.message() << "\n";
     return true;
@@ -249,11 +261,18 @@ static bool format(StringRef FileName) {
   if (fillRanges(Code.get(), Ranges))
     return true;
   StringRef AssumedFileName = (FileName == "-") ? AssumeFileName : FileName;
-  FormatStyle FormatStyle = getStyle(Style, AssumedFileName, FallbackStyle);
+
+  llvm::Expected<FormatStyle> FormatStyle =
+      getStyle(Style, AssumedFileName, FallbackStyle, Code->getBuffer());
+  if (!FormatStyle) {
+    llvm::errs() << llvm::toString(FormatStyle.takeError()) << "\n";
+    return true;
+  }
+
   if (SortIncludes.getNumOccurrences() != 0)
-    FormatStyle.SortIncludes = SortIncludes;
+    FormatStyle->SortIncludes = SortIncludes;
   unsigned CursorPosition = Cursor;
-  Replacements Replaces = sortIncludes(FormatStyle, Code->getBuffer(), Ranges,
+  Replacements Replaces = sortIncludes(*FormatStyle, Code->getBuffer(), Ranges,
                                        AssumedFileName, &CursorPosition);
   auto ChangedCode = tooling::applyAllReplacements(Code->getBuffer(), Replaces);
   if (!ChangedCode) {
@@ -262,14 +281,17 @@ static bool format(StringRef FileName) {
   }
   // Get new affected ranges after sorting `#includes`.
   Ranges = tooling::calculateRangesAfterReplacements(Replaces, Ranges);
-  bool IncompleteFormat = false;
-  Replacements FormatChanges = reformat(FormatStyle, *ChangedCode, Ranges,
-                                        AssumedFileName, &IncompleteFormat);
+  FormattingAttemptStatus Status;
+  Replacements FormatChanges = reformat(*FormatStyle, *ChangedCode, Ranges,
+                                        AssumedFileName, &Status);
   Replaces = Replaces.merge(FormatChanges);
   if (OutputXML) {
     outs() << "<?xml version='1.0'?>\n<replacements "
               "xml:space='preserve' incomplete_format='"
-           << (IncompleteFormat ? "true" : "false") << "'>\n";
+           << (Status.FormatComplete ? "false" : "true") << "'";
+    if (!Status.FormatComplete)
+      outs() << " line='" << Status.Line << "'";
+    outs() << ">\n";
     if (Cursor.getNumOccurrences() != 0)
       outs() << "<cursor>"
              << FormatChanges.getShiftedCodePosition(CursorPosition)
@@ -290,16 +312,18 @@ static bool format(StringRef FileName) {
     Rewriter Rewrite(Sources, LangOptions());
     tooling::applyAllReplacements(Replaces, Rewrite);
     if (Inplace) {
-      if (FileName == "-")
-        errs() << "error: cannot use -i when reading from stdin.\n";
-      else if (Rewrite.overwriteChangedFiles())
+      if (Rewrite.overwriteChangedFiles())
         return true;
     } else {
-      if (Cursor.getNumOccurrences() != 0)
+      if (Cursor.getNumOccurrences() != 0) {
         outs() << "{ \"Cursor\": "
                << FormatChanges.getShiftedCodePosition(CursorPosition)
                << ", \"IncompleteFormat\": "
-               << (IncompleteFormat ? "true" : "false") << " }\n";
+               << (Status.FormatComplete ? "false" : "true");
+        if (!Status.FormatComplete)
+          outs() << ", \"Line\": " << Status.Line;
+        outs() << " }\n";
+      }
       Rewrite.getEditBuffer(ID).write(outs());
     }
   }
@@ -309,19 +333,26 @@ static bool format(StringRef FileName) {
 }  // namespace format
 }  // namespace clang
 
-static void PrintVersion() {
-  raw_ostream &OS = outs();
+static void PrintVersion(raw_ostream &OS) {
   OS << clang::getClangToolFullVersion("clang-format") << '\n';
 }
 
 int main(int argc, const char **argv) {
   llvm::sys::PrintStackTraceOnErrorSignal(argv[0]);
 
+  SmallVector<const char *, 256> Args;
+  llvm::SpecificBumpPtrAllocator<char> ArgAllocator;
+  std::error_code EC = llvm::sys::Process::GetArgumentVector(
+      Args, llvm::makeArrayRef(argv, argc), ArgAllocator);
+  if (EC) {
+    llvm::errs() << "error: couldn't get arguments: " << EC.message() << '\n';
+  }
+
   cl::HideUnrelatedOptions(ClangFormatCategory);
 
   cl::SetVersionPrinter(PrintVersion);
   cl::ParseCommandLineOptions(
-      argc, argv,
+      Args.size(), &Args[0],
       "A tool to format C/C++/Java/JavaScript/Objective-C/Protobuf code.\n\n"
       "If no arguments are specified, it formats the code from standard input\n"
       "and writes the result to the standard output.\n"
@@ -329,36 +360,56 @@ int main(int argc, const char **argv) {
       "together with <file>s, the files are edited in-place. Otherwise, the\n"
       "result is written to the standard output.\n");
 
-  if (Help)
+  if (Help) {
     cl::PrintHelpMessage();
+    return 0;
+  }
 
   if (DumpConfig) {
-    std::string Config =
-        clang::format::configurationAsText(clang::format::getStyle(
-            Style, FileNames.empty() ? AssumeFileName : FileNames[0],
-            FallbackStyle));
+    StringRef FileName;
+    std::unique_ptr<llvm::MemoryBuffer> Code;
+    if (FileNames.empty()) {
+      // We can't read the code to detect the language if there's no
+      // file name, so leave Code empty here.
+      FileName = AssumeFileName;
+    } else {
+      // Read in the code in case the filename alone isn't enough to
+      // detect the language.
+      ErrorOr<std::unique_ptr<MemoryBuffer>> CodeOrErr =
+          MemoryBuffer::getFileOrSTDIN(FileNames[0]);
+      if (std::error_code EC = CodeOrErr.getError()) {
+        llvm::errs() << EC.message() << "\n";
+        return 1;
+      }
+      FileName = (FileNames[0] == "-") ? AssumeFileName : FileNames[0];
+      Code = std::move(CodeOrErr.get());
+    }
+    llvm::Expected<clang::format::FormatStyle> FormatStyle =
+        clang::format::getStyle(Style, FileName, FallbackStyle,
+                                Code ? Code->getBuffer() : "");
+    if (!FormatStyle) {
+      llvm::errs() << llvm::toString(FormatStyle.takeError()) << "\n";
+      return 1;
+    }
+    std::string Config = clang::format::configurationAsText(*FormatStyle);
     outs() << Config << "\n";
     return 0;
   }
 
   bool Error = false;
-  switch (FileNames.size()) {
-  case 0:
+  if (FileNames.empty()) {
     Error = clang::format::format("-");
-    break;
-  case 1:
-    Error = clang::format::format(FileNames[0]);
-    break;
-  default:
-    if (!Offsets.empty() || !Lengths.empty() || !LineRanges.empty()) {
-      errs() << "error: -offset, -length and -lines can only be used for "
-                "single file.\n";
-      return 1;
-    }
-    for (unsigned i = 0; i < FileNames.size(); ++i)
-      Error |= clang::format::format(FileNames[i]);
-    break;
+    return Error ? 1 : 0;
+  }
+  if (FileNames.size() != 1 && (!Offsets.empty() || !Lengths.empty() || !LineRanges.empty())) {
+    errs() << "error: -offset, -length and -lines can only be used for "
+              "single file.\n";
+    return 1;
+  }
+  for (const auto &FileName : FileNames) {
+    if (Verbose)
+      errs() << "Formatting " << FileName << "\n";
+    Error |= clang::format::format(FileName);
   }
   return Error ? 1 : 0;
 }
-

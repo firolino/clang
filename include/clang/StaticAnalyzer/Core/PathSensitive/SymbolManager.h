@@ -1,4 +1,4 @@
-//== SymbolManager.h - Management of Symbolic Values ------------*- C++ -*--==//
+//===- SymbolManager.h - Management of Symbolic Values ----------*- C++ -*-===//
 //
 //                     The LLVM Compiler Infrastructure
 //
@@ -15,9 +15,9 @@
 #ifndef LLVM_CLANG_STATICANALYZER_CORE_PATHSENSITIVE_SYMBOLMANAGER_H
 #define LLVM_CLANG_STATICANALYZER_CORE_PATHSENSITIVE_SYMBOLMANAGER_H
 
-#include "clang/AST/Decl.h"
 #include "clang/AST/Expr.h"
-#include "clang/Analysis/AnalysisContext.h"
+#include "clang/AST/Type.h"
+#include "clang/Analysis/AnalysisDeclContext.h"
 #include "clang/Basic/LLVM.h"
 #include "clang/StaticAnalyzer/Core/PathSensitive/MemRegion.h"
 #include "clang/StaticAnalyzer/Core/PathSensitive/StoreRef.h"
@@ -26,17 +26,17 @@
 #include "llvm/ADT/DenseSet.h"
 #include "llvm/ADT/FoldingSet.h"
 #include "llvm/Support/Allocator.h"
-#include "llvm/Support/DataTypes.h"
+#include <cassert>
 
 namespace clang {
-  class ASTContext;
-  class StackFrameContext;
+
+class ASTContext;
+class Stmt;
 
 namespace ento {
-  class BasicValueFactory;
-  class SubRegion;
-  class TypedValueRegion;
-  class VarRegion;
+
+class BasicValueFactory;
+class StoreManager;
 
 ///\brief A symbol representing the value stored at a MemRegion.
 class SymbolRegionValue : public SymbolData {
@@ -44,7 +44,10 @@ class SymbolRegionValue : public SymbolData {
 
 public:
   SymbolRegionValue(SymbolID sym, const TypedValueRegion *r)
-    : SymbolData(SymbolRegionValueKind, sym), R(r) {}
+      : SymbolData(SymbolRegionValueKind, sym), R(r) {
+    assert(r);
+    assert(isValidTypeForSymbol(r->getValueType()));
+  }
 
   const TypedValueRegion* getRegion() const { return R; }
 
@@ -63,7 +66,7 @@ public:
   QualType getType() const override;
 
   // Implement isa<T> support.
-  static inline bool classof(const SymExpr *SE) {
+  static bool classof(const SymExpr *SE) {
     return SE->getKind() == SymbolRegionValueKind;
   }
 };
@@ -81,7 +84,15 @@ public:
   SymbolConjured(SymbolID sym, const Stmt *s, const LocationContext *lctx,
                  QualType t, unsigned count, const void *symbolTag)
       : SymbolData(SymbolConjuredKind, sym), S(s), T(t), Count(count),
-        LCtx(lctx), SymbolTag(symbolTag) {}
+        LCtx(lctx), SymbolTag(symbolTag) {
+    // FIXME: 's' might be a nullptr if we're conducting invalidation
+    // that was caused by a destructor call on a temporary object,
+    // which has no statement associated with it.
+    // Due to this, we might be creating the same invalidation symbol for
+    // two different invalidation passes (for two different temporaries).
+    assert(lctx);
+    assert(isValidTypeForSymbol(t));
+  }
 
   const Stmt *getStmt() const { return S; }
   unsigned getCount() const { return Count; }
@@ -107,7 +118,7 @@ public:
   }
 
   // Implement isa<T> support.
-  static inline bool classof(const SymExpr *SE) {
+  static bool classof(const SymExpr *SE) {
     return SE->getKind() == SymbolConjuredKind;
   }
 };
@@ -120,7 +131,11 @@ class SymbolDerived : public SymbolData {
 
 public:
   SymbolDerived(SymbolID sym, SymbolRef parent, const TypedValueRegion *r)
-    : SymbolData(SymbolDerivedKind, sym), parentSymbol(parent), R(r) {}
+      : SymbolData(SymbolDerivedKind, sym), parentSymbol(parent), R(r) {
+    assert(parent);
+    assert(r);
+    assert(isValidTypeForSymbol(r->getValueType()));
+  }
 
   SymbolRef getParentSymbol() const { return parentSymbol; }
   const TypedValueRegion *getRegion() const { return R; }
@@ -142,7 +157,7 @@ public:
   }
 
   // Implement isa<T> support.
-  static inline bool classof(const SymExpr *SE) {
+  static bool classof(const SymExpr *SE) {
     return SE->getKind() == SymbolDerivedKind;
   }
 };
@@ -155,7 +170,9 @@ class SymbolExtent : public SymbolData {
   
 public:
   SymbolExtent(SymbolID sym, const SubRegion *r)
-  : SymbolData(SymbolExtentKind, sym), R(r) {}
+      : SymbolData(SymbolExtentKind, sym), R(r) {
+    assert(r);
+  }
 
   const SubRegion *getRegion() const { return R; }
 
@@ -173,7 +190,7 @@ public:
   }
 
   // Implement isa<T> support.
-  static inline bool classof(const SymExpr *SE) {
+  static bool classof(const SymExpr *SE) {
     return SE->getKind() == SymbolExtentKind;
   }
 };
@@ -189,11 +206,18 @@ class SymbolMetadata : public SymbolData {
   const LocationContext *LCtx;
   unsigned Count;
   const void *Tag;
+
 public:
   SymbolMetadata(SymbolID sym, const MemRegion* r, const Stmt *s, QualType t,
                  const LocationContext *LCtx, unsigned count, const void *tag)
-  : SymbolData(SymbolMetadataKind, sym), R(r), S(s), T(t), LCtx(LCtx),
-    Count(count), Tag(tag) {}
+      : SymbolData(SymbolMetadataKind, sym), R(r), S(s), T(t), LCtx(LCtx),
+        Count(count), Tag(tag) {
+      assert(r);
+      assert(s);
+      assert(isValidTypeForSymbol(t));
+      assert(LCtx);
+      assert(tag);
+    }
 
   const MemRegion *getRegion() const { return R; }
   const Stmt *getStmt() const { return S; }
@@ -222,7 +246,7 @@ public:
   }
 
   // Implement isa<T> support.
-  static inline bool classof(const SymExpr *SE) {
+  static bool classof(const SymExpr *SE) {
     return SE->getKind() == SymbolMetadataKind;
   }
 };
@@ -230,14 +254,21 @@ public:
 /// \brief Represents a cast expression.
 class SymbolCast : public SymExpr {
   const SymExpr *Operand;
+
   /// Type of the operand.
   QualType FromTy;
+
   /// The type of the result.
   QualType ToTy;
 
 public:
-  SymbolCast(const SymExpr *In, QualType From, QualType To) :
-    SymExpr(SymbolCastKind), Operand(In), FromTy(From), ToTy(To) { }
+  SymbolCast(const SymExpr *In, QualType From, QualType To)
+      : SymExpr(SymbolCastKind), Operand(In), FromTy(From), ToTy(To) {
+    assert(In);
+    assert(isValidTypeForSymbol(From));
+    // FIXME: GenericTaintChecker creates symbols of void type.
+    // Otherwise, 'To' should also be a valid type.
+  }
 
   QualType getType() const override { return ToTy; }
 
@@ -258,7 +289,7 @@ public:
   }
 
   // Implement isa<T> support.
-  static inline bool classof(const SymExpr *SE) {
+  static bool classof(const SymExpr *SE) {
     return SE->getKind() == SymbolCastKind;
   }
 };
@@ -270,7 +301,10 @@ class BinarySymExpr : public SymExpr {
 
 protected:
   BinarySymExpr(Kind k, BinaryOperator::Opcode op, QualType t)
-    : SymExpr(k), Op(op), T(t) {}
+      : SymExpr(k), Op(op), T(t) {
+    assert(classof(this));
+    assert(isValidTypeForSymbol(t));
+  }
 
 public:
   // FIXME: We probably need to make this out-of-line to avoid redundant
@@ -280,7 +314,7 @@ public:
   BinaryOperator::Opcode getOpcode() const { return Op; }
 
   // Implement isa<T> support.
-  static inline bool classof(const SymExpr *SE) {
+  static bool classof(const SymExpr *SE) {
     Kind k = SE->getKind();
     return k >= BEGIN_BINARYSYMEXPRS && k <= END_BINARYSYMEXPRS;
   }
@@ -293,8 +327,10 @@ class SymIntExpr : public BinarySymExpr {
 
 public:
   SymIntExpr(const SymExpr *lhs, BinaryOperator::Opcode op,
-             const llvm::APSInt& rhs, QualType t)
-    : BinarySymExpr(SymIntExprKind, op, t), LHS(lhs), RHS(rhs) {}
+             const llvm::APSInt &rhs, QualType t)
+      : BinarySymExpr(SymIntExprKind, op, t), LHS(lhs), RHS(rhs) {
+    assert(lhs);
+  }
 
   void dumpToStream(raw_ostream &os) const override;
 
@@ -316,7 +352,7 @@ public:
   }
 
   // Implement isa<T> support.
-  static inline bool classof(const SymExpr *SE) {
+  static bool classof(const SymExpr *SE) {
     return SE->getKind() == SymIntExprKind;
   }
 };
@@ -327,9 +363,11 @@ class IntSymExpr : public BinarySymExpr {
   const SymExpr *RHS;
 
 public:
-  IntSymExpr(const llvm::APSInt& lhs, BinaryOperator::Opcode op,
+  IntSymExpr(const llvm::APSInt &lhs, BinaryOperator::Opcode op,
              const SymExpr *rhs, QualType t)
-    : BinarySymExpr(IntSymExprKind, op, t), LHS(lhs), RHS(rhs) {}
+      : BinarySymExpr(IntSymExprKind, op, t), LHS(lhs), RHS(rhs) {
+    assert(rhs);
+  }
 
   void dumpToStream(raw_ostream &os) const override;
 
@@ -351,7 +389,7 @@ public:
   }
 
   // Implement isa<T> support.
-  static inline bool classof(const SymExpr *SE) {
+  static bool classof(const SymExpr *SE) {
     return SE->getKind() == IntSymExprKind;
   }
 };
@@ -364,7 +402,10 @@ class SymSymExpr : public BinarySymExpr {
 public:
   SymSymExpr(const SymExpr *lhs, BinaryOperator::Opcode op, const SymExpr *rhs,
              QualType t)
-    : BinarySymExpr(SymSymExprKind, op, t), LHS(lhs), RHS(rhs) {}
+      : BinarySymExpr(SymSymExprKind, op, t), LHS(lhs), RHS(rhs) {
+    assert(lhs);
+    assert(rhs);
+  }
 
   const SymExpr *getLHS() const { return LHS; }
   const SymExpr *getRHS() const { return RHS; }
@@ -385,20 +426,22 @@ public:
   }
 
   // Implement isa<T> support.
-  static inline bool classof(const SymExpr *SE) {
+  static bool classof(const SymExpr *SE) {
     return SE->getKind() == SymSymExprKind;
   }
 };
 
 class SymbolManager {
-  typedef llvm::FoldingSet<SymExpr> DataSetTy;
-  typedef llvm::DenseMap<SymbolRef, SymbolRefSmallVectorTy*> SymbolDependTy;
+  using DataSetTy = llvm::FoldingSet<SymExpr>;
+  using SymbolDependTy = llvm::DenseMap<SymbolRef, SymbolRefSmallVectorTy *>;
 
   DataSetTy DataSet;
+
   /// Stores the extra dependencies between symbols: the data should be kept
   /// alive as long as the key is live.
   SymbolDependTy SymbolDependencies;
-  unsigned SymbolCounter;
+
+  unsigned SymbolCounter = 0;
   llvm::BumpPtrAllocator& BPAlloc;
   BasicValueFactory &BV;
   ASTContext &Ctx;
@@ -406,9 +449,7 @@ class SymbolManager {
 public:
   SymbolManager(ASTContext &ctx, BasicValueFactory &bv,
                 llvm::BumpPtrAllocator& bpalloc)
-    : SymbolDependencies(16), SymbolCounter(0),
-      BPAlloc(bpalloc), BV(bv), Ctx(ctx) {}
-
+      : SymbolDependencies(16), BPAlloc(bpalloc), BV(bv), Ctx(ctx) {}
   ~SymbolManager();
 
   static bool canSymbolicate(QualType T);
@@ -484,9 +525,9 @@ class SymbolReaper {
     HaveMarkedDependents
   };
 
-  typedef llvm::DenseSet<SymbolRef> SymbolSetTy;
-  typedef llvm::DenseMap<SymbolRef, SymbolStatus> SymbolMapTy;
-  typedef llvm::DenseSet<const MemRegion *> RegionSetTy;
+  using SymbolSetTy = llvm::DenseSet<SymbolRef>;
+  using SymbolMapTy = llvm::DenseMap<SymbolRef, SymbolStatus>;
+  using RegionSetTy = llvm::DenseSet<const MemRegion *>;
 
   SymbolMapTy TheLiving;
   SymbolSetTy MetadataInUse;
@@ -508,10 +549,9 @@ public:
   /// considered live.
   /// If the stack frame context is NULL, everything on stack is considered
   /// dead.
-  SymbolReaper(const StackFrameContext *Ctx, const Stmt *s, SymbolManager& symmgr,
-               StoreManager &storeMgr)
-   : LCtx(Ctx), Loc(s), SymMgr(symmgr),
-     reapedStore(nullptr, storeMgr) {}
+  SymbolReaper(const StackFrameContext *Ctx, const Stmt *s,
+               SymbolManager &symmgr, StoreManager &storeMgr)
+      : LCtx(Ctx), Loc(s), SymMgr(symmgr), reapedStore(nullptr, storeMgr) {}
 
   const LocationContext *getLocationContext() const { return LCtx; }
 
@@ -542,7 +582,8 @@ public:
   ///  Returns true if the symbol is dead, false if live.
   bool maybeDead(SymbolRef sym);
 
-  typedef SymbolSetTy::const_iterator dead_iterator;
+  using dead_iterator = SymbolSetTy::const_iterator;
+
   dead_iterator dead_begin() const { return TheDead.begin(); }
   dead_iterator dead_end() const { return TheDead.end(); }
 
@@ -550,7 +591,8 @@ public:
     return !TheDead.empty();
   }
   
-  typedef RegionSetTy::const_iterator region_iterator;
+  using region_iterator = RegionSetTy::const_iterator;
+
   region_iterator region_begin() const { return RegionRoots.begin(); }
   region_iterator region_end() const { return RegionRoots.end(); }
 
@@ -591,15 +633,8 @@ public:
   virtual bool VisitMemRegion(const MemRegion *region) { return true; }
 };
 
-} // end GR namespace
+} // namespace ento
 
-} // end clang namespace
+} // namespace clang
 
-namespace llvm {
-static inline raw_ostream &operator<<(raw_ostream &os,
-                                      const clang::ento::SymExpr *SE) {
-  SE->dumpToStream(os);
-  return os;
-}
-} // end llvm namespace
-#endif
+#endif // LLVM_CLANG_STATICANALYZER_CORE_PATHSENSITIVE_SYMBOLMANAGER_H

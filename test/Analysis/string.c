@@ -1,7 +1,7 @@
-// RUN: %clang_cc1 -analyze -analyzer-checker=core,unix.cstring,alpha.unix.cstring,debug.ExprInspection -analyzer-store=region -Wno-null-dereference -verify %s
-// RUN: %clang_cc1 -analyze -DUSE_BUILTINS -analyzer-checker=core,unix.cstring,alpha.unix.cstring,debug.ExprInspection -analyzer-store=region -Wno-null-dereference -verify %s
-// RUN: %clang_cc1 -analyze -DVARIANT -analyzer-checker=core,unix.cstring,alpha.unix.cstring,debug.ExprInspection -analyzer-store=region -Wno-null-dereference -verify %s
-// RUN: %clang_cc1 -analyze -DUSE_BUILTINS -DVARIANT -analyzer-checker=alpha.security.taint,core,unix.cstring,alpha.unix.cstring,debug.ExprInspection -analyzer-store=region -Wno-null-dereference -verify %s
+// RUN: %clang_analyze_cc1 -analyzer-checker=core,unix.cstring,alpha.unix.cstring,debug.ExprInspection -analyzer-store=region -Wno-null-dereference -verify %s
+// RUN: %clang_analyze_cc1 -DUSE_BUILTINS -analyzer-checker=core,unix.cstring,alpha.unix.cstring,debug.ExprInspection -analyzer-store=region -Wno-null-dereference -verify %s
+// RUN: %clang_analyze_cc1 -DVARIANT -analyzer-checker=core,unix.cstring,alpha.unix.cstring,debug.ExprInspection -analyzer-store=region -Wno-null-dereference -verify %s
+// RUN: %clang_analyze_cc1 -DUSE_BUILTINS -DVARIANT -analyzer-checker=alpha.security.taint,core,unix.cstring,alpha.unix.cstring,debug.ExprInspection -analyzer-store=region -Wno-null-dereference -verify %s
 
 //===----------------------------------------------------------------------===
 // Declarations
@@ -1163,15 +1163,16 @@ void strsep_changes_input_string() {
 // FIXMEs
 //===----------------------------------------------------------------------===
 
-// The analyzer_eval call below should evaluate to true. We are being too 
-// aggressive in marking the (length of) src symbol dead. The length of dst 
-// depends on src. This could be explicitely specified in the checker or the 
+// The analyzer_eval call below should evaluate to true. We are being too
+// aggressive in marking the (length of) src symbol dead. The length of dst
+// depends on src. This could be explicitly specified in the checker or the
 // logic for handling MetadataSymbol in SymbolManager needs to change.
 void strcat_symbolic_src_length(char *src) {
 	char dst[8] = "1234";
 	strcat(dst, src);
   clang_analyzer_eval(strlen(dst) >= 4); // expected-warning{{UNKNOWN}}
 }
+
 
 // The analyzer_eval call below should evaluate to true. Most likely the same
 // issue as the test above.

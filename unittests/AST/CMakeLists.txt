@@ -9,17 +9,18 @@ add_clang_unittest(ASTTests
   ASTVectorTest.cpp
   CommentLexer.cpp
   CommentParser.cpp
+  DataCollectionTest.cpp
   DeclPrinterTest.cpp
   DeclTest.cpp
   EvaluateAsRValueTest.cpp
   ExternalASTSourceTest.cpp
   NamedDeclPrinterTest.cpp
-  PostOrderASTVisitor.cpp
   SourceLocationTest.cpp
   StmtPrinterTest.cpp
   )
 
 target_link_libraries(ASTTests
+  PRIVATE
   clangAST
   clangASTMatchers
   clangBasic
